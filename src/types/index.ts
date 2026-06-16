@@ -10,6 +10,7 @@ export interface Job {
   categorySlug: string
   employmentType: string
   employmentTypeSlug: string
+  experienceLevel?: 'fresh-graduate' | 'junior' | 'mid' | 'senior'
   salary?: string
   description: string
   requirements: string[]
@@ -33,6 +34,8 @@ export interface JobsParams {
   category?: string
   location?: string
   employmentType?: string
+  salaryRange?: string
+  experienceLevel?: string
 }
 
 export interface Category {
@@ -60,6 +63,7 @@ export interface RecruitmentEvent {
   slug: string
   title: string
   type: EventType
+  batch: number
   description: string
   date: string
   endDate?: string
@@ -68,6 +72,7 @@ export interface RecruitmentEvent {
   banner?: string
   jobs?: Job[]
   registrationDeadline?: string
+  status: 'upcoming' | 'ongoing' | 'past'
 }
 
 export interface EventsResponse {

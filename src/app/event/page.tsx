@@ -11,9 +11,9 @@ import { fetchEvents } from '@/services/events.service'
 export const revalidate = 3600
 
 export const metadata: Metadata = generateListingMetadata({
-  title: 'Event Rekrutmen & Job Fair | CDC Stekom',
+  title: 'Event Rekrutmen & Job Fair | CDC Universitas Stekom',
   description:
-    'Virtual Job Fair dan Rekrutmen Offline dari CDC Stekom. Daftarkan diri dan temukan peluang karir langsung dari rekruter.',
+    'Virtual Job Fair dan Rekrutmen Offline dari CDC Universitas Stekom. Daftarkan diri dan temukan peluang karir langsung dari rekruter.',
   path: '/event',
 })
 
@@ -33,7 +33,7 @@ export default async function EventPage() {
             Event Rekrutmen
           </h1>
           <p className="mt-1 text-sm text-brand-muted">
-            Job Fair, Virtual Job Fair, dan Rekrutmen Offline dari CDC Stekom
+            Job Fair, Virtual Job Fair, dan Rekrutmen Offline dari CDC Universitas Stekom
           </p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default async function EventPage() {
                 Rekrutmen Offline
               </h2>
               <p className="mt-1 text-sm text-brand-muted">
-                Rekrutmen langsung di kampus Stekom. Seleksi on-the-spot dengan rekruter.
+                Rekrutmen langsung di kampus Universitas STEKOM. Seleksi on-the-spot dengan rekruter.
               </p>
             </div>
           </Link>

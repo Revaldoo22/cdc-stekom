@@ -11,10 +11,10 @@ export function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 font-bold text-white cursor-pointer">
               <Briefcase className="h-5 w-5" aria-hidden="true" />
-              CDC Stekom
+              CDC Universitas Stekom
             </Link>
             <p className="mt-3 text-sm text-[#CBD5E1] leading-relaxed">
-              Career Development Center Universitas STEKOM — menghubungkan mahasiswa dan alumni dengan peluang karir terbaik.
+              Career Development Center Universitas STEKOM. Menghubungkan pencari kerja dengan peluang karir terbaik.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-[#CBD5E1]">
-          <p>© {year} Career Development Center — Universitas STEKOM. Hak cipta dilindungi.</p>
+          <p>© {year} Career Development Center Universitas STEKOM. Hak cipta dilindungi.</p>
         </div>
       </div>
     </footer>

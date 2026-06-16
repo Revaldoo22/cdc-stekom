@@ -64,7 +64,7 @@ export default async function EventDetailPage({ params }: PageProps) {
             <span className="flex items-center gap-1.5">
               <Clock className="h-4 w-4 text-primary" aria-hidden="true" />
               {new Date(event.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              {event.endDate && ` — ${new Date(event.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}`}
+              {event.endDate && ` s.d. ${new Date(event.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}`}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -114,7 +114,7 @@ export default async function EventDetailPage({ params }: PageProps) {
           <div className="w-full lg:w-96 shrink-0">
             <div className="sticky top-20 rounded-lg border border-border bg-background p-6">
               <h2 className="text-lg font-bold text-brand-text mb-1">Daftar Sekarang</h2>
-              <p className="text-sm text-brand-muted mb-5">Gratis untuk mahasiswa dan alumni Stekom</p>
+              <p className="text-sm text-brand-muted mb-5">Gratis untuk semua peserta</p>
               {event.type === 'vjf' ? (
                 <VJFRegistrationForm eventId={event.id} eventTitle={event.title} />
               ) : (

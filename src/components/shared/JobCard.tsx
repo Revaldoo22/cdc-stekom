@@ -1,11 +1,19 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, BadgeDollarSign, Bookmark, Building2 } from 'lucide-react'
+import { MapPin, BadgeDollarSign, Bookmark, BookmarkCheck, Building2 } from 'lucide-react'
+import { useSavedJobs } from '@/hooks/useSavedJobs'
 import type { Job } from '@/types'
 
 interface JobCardProps {
   job: Job
+}
+
+const EXPERIENCE_LABEL: Record<string, string> = {
+  'fresh-graduate': 'Fresh Graduate',
+  junior: 'Junior',
+  mid: 'Mid Level',
+  senior: 'Senior',
 }
 
 const TIPE_COLOR: Record<string, string> = {
@@ -31,9 +39,11 @@ function isNew(dateStr: string): boolean {
 }
 
 export function JobCard({ job }: JobCardProps) {
+  const { toggleSave, isSaved } = useSavedJobs()
   const badgeClass = TIPE_COLOR[job.employmentTypeSlug] ?? 'bg-muted text-brand-muted'
   const isExpired  = job.expiresAt ? new Date(job.expiresAt) < new Date() : false
   const fresh      = !isExpired && isNew(job.postedAt)
+  const saved      = isSaved(job.id)
 
   return (
     <Link
@@ -60,11 +70,17 @@ export function JobCard({ job }: JobCardProps) {
         )}
 
         <button
-          onClick={(e) => e.preventDefault()}
-          aria-label="Simpan lowongan"
-          className="p-1.5 rounded-lg text-border hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer"
+          onClick={(e) => { e.preventDefault(); toggleSave(job.id) }}
+          aria-label={saved ? 'Hapus dari tersimpan' : 'Simpan lowongan'}
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            saved
+              ? 'text-primary bg-primary/8'
+              : 'text-border hover:text-primary hover:bg-primary/5'
+          }`}
         >
-          <Bookmark className="h-4 w-4" />
+          {saved
+            ? <BookmarkCheck className="h-4 w-4" />
+            : <Bookmark className="h-4 w-4" />}
         </button>
       </div>
 
@@ -103,11 +119,18 @@ export function JobCard({ job }: JobCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${badgeClass}`}>
-          {job.employmentType}
-        </span>
-        <span className="text-[11px] text-brand-muted/60">
+      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${badgeClass}`}>
+            {job.employmentType}
+          </span>
+          {job.experienceLevel && (
+            <span className="shrink-0 rounded-full border border-border px-2.5 py-0.5 text-[11px] text-brand-muted">
+              {EXPERIENCE_LABEL[job.experienceLevel]}
+            </span>
+          )}
+        </div>
+        <span className="text-[11px] text-brand-muted/60 shrink-0">
           {relativeTime(job.postedAt)}
         </span>
       </div>

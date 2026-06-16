@@ -5,8 +5,8 @@ import { SITE_URL } from '@/config/api'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
 
 export function generateJobMetadata(job: Job): Metadata {
-  const title = `${job.title} di ${job.company} | CDC Stekom`
-  const description = `Lamar ${job.title} di ${job.company}, ${job.location}${job.salary ? ` — Gaji ${job.salary}` : ''}. Lowongan ${job.employmentType} terbaru ${new Date().getFullYear()}.`
+  const title = `${job.title} di ${job.company} | CDC Universitas Stekom`
+  const description = `Lamar ${job.title} di ${job.company}, ${job.location}${job.salary ? `. Gaji ${job.salary}` : ''}. Lowongan ${job.employmentType} terbaru ${new Date().getFullYear()}.`
   const url = `${SITE_URL}/job/${job.slug}`
 
   return {
@@ -18,13 +18,12 @@ export function generateJobMetadata(job: Job): Metadata {
       description,
       url,
       type: 'article',
-      images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630 }],
+      // opengraph-image.tsx co-located in /job/[slug]/ auto-generates dynamic OG
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [DEFAULT_OG_IMAGE],
     },
     robots: job.expiresAt && new Date(job.expiresAt) < new Date()
       ? { index: false, follow: false }
@@ -62,8 +61,8 @@ export function generateListingMetadata(opts: {
 }
 
 export function generateEventMetadata(event: RecruitmentEvent): Metadata {
-  const title = `${event.title} | CDC Stekom`
-  const description = `Daftarkan diri ke ${event.title} — ${event.location}. ${event.description.slice(0, 120)}...`
+  const title = `${event.title} | CDC Universitas Stekom`
+  const description = `Daftarkan diri ke ${event.title} di ${event.location}. ${event.description.slice(0, 120)}...`
   const url = `${SITE_URL}/event/${event.slug}`
 
   return {

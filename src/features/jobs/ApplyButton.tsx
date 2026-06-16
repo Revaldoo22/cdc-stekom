@@ -51,7 +51,7 @@ export function ApplyButton({ job, disabled = false, className }: ApplyButtonPro
           <DialogHeader>
             <DialogTitle>Lamar Posisi</DialogTitle>
             <DialogDescription>
-              {job.title} — {job.company}
+              {job.title} di {job.company}
             </DialogDescription>
           </DialogHeader>
           <JobApplicationForm

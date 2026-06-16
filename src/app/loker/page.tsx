@@ -3,8 +3,6 @@ import type { Metadata } from 'next'
 import { generateListingMetadata } from '@/lib/seo'
 import { breadcrumbSchema } from '@/lib/schema'
 import { JsonLd } from '@/components/shared/JsonLd'
-import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
-import { SkeletonJobGrid } from '@/components/shared/SkeletonJobCard'
 import { JobListingClient } from '@/features/jobs/JobListingClient'
 import {
   fetchJobs,
@@ -12,7 +10,7 @@ import {
   fetchLocations,
   fetchTipeKerja,
 } from '@/services/jobs.service'
-import { PER_PAGE } from '@/config/api'
+import { PER_PAGE, SITE_URL } from '@/config/api'
 
 export const revalidate = 3600
 
@@ -24,8 +22,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const params = await searchParams
   const keyword = params.keyword ?? ''
   const title = keyword
-    ? `Lowongan "${keyword}" Terbaru 2026 | CDC Stekom`
-    : 'Lowongan Kerja Terbaru 2026 | CDC Stekom'
+    ? `Lowongan "${keyword}" Terbaru 2026 | CDC Universitas Stekom`
+    : 'Lowongan Kerja Terbaru 2026 | CDC Universitas Stekom'
   return generateListingMetadata({
     title,
     description:
@@ -42,33 +40,41 @@ export default async function LokerPage({ searchParams }: PageProps) {
   const category = params.category ?? ''
   const location = params.location ?? ''
   const tipe = params.tipe ?? ''
+  const salary = params.salary ?? ''
+  const experience = params.experience ?? ''
 
   const [{ jobs, total }, categories, locations, tipeKerja] = await Promise.all([
-    fetchJobs({ page, perPage: PER_PAGE, keyword, category, location, employmentType: tipe }),
+    fetchJobs({ page, perPage: PER_PAGE, keyword, category, location, employmentType: tipe, salaryRange: salary, experienceLevel: experience }),
     fetchCategories(),
     fetchLocations(),
     fetchTipeKerja(),
   ])
 
-  const crumbs = [{ label: 'Beranda', href: '/' }]
+  const totalPages = Math.ceil(total / PER_PAGE)
+  const baseUrl = `${SITE_URL}/loker`
+
+  // Build prev/next href preserving active filters
+  function paginationUrl(p: number) {
+    const qs = new URLSearchParams()
+    if (keyword)    qs.set('keyword', keyword)
+    if (category)   qs.set('category', category)
+    if (location)   qs.set('location', location)
+    if (tipe)       qs.set('tipe', tipe)
+    if (salary)     qs.set('salary', salary)
+    if (experience) qs.set('experience', experience)
+    if (p > 1)      qs.set('page', String(p))
+    const str = qs.toString()
+    return str ? `${baseUrl}?${str}` : baseUrl
+  }
 
   return (
     <>
-      <JsonLd schema={breadcrumbSchema([...crumbs, { label: 'Lowongan Kerja', href: '/loker' }])} />
+      {page > 1 && <link rel="prev" href={paginationUrl(page - 1)} />}
+      {page < totalPages && <link rel="next" href={paginationUrl(page + 1)} />}
 
-      <div className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <Breadcrumbs crumbs={crumbs} currentLabel="Lowongan Kerja" />
-          <h1 className="mt-2 text-2xl font-bold text-brand-text sm:text-3xl">
-            Lowongan Kerja Terbaru
-          </h1>
-          <p className="mt-1 text-sm text-brand-muted">
-            {total} lowongan tersedia · Diperbarui setiap jam
-          </p>
-        </div>
-      </div>
+      <JsonLd schema={breadcrumbSchema([{ label: 'Beranda', href: '/' }, { label: 'Lowongan Kerja', href: '/loker' }])} />
 
-      <Suspense fallback={<div className="mx-auto max-w-7xl px-4 py-8"><SkeletonJobGrid /></div>}>
+      <Suspense fallback={<div className="flex items-center justify-center h-64 text-brand-muted text-sm">Memuat lowongan...</div>}>
         <JobListingClient
           jobs={jobs}
           total={total}
@@ -80,8 +86,11 @@ export default async function LokerPage({ searchParams }: PageProps) {
           initialCategory={category}
           initialLocation={location}
           initialTipe={tipe}
+          initialSalary={salary}
+          initialExperience={experience}
         />
       </Suspense>
     </>
   )
 }
+

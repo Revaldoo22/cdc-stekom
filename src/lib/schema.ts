@@ -29,6 +29,7 @@ export function jobPostingSchema(job: Job): object {
     datePosted: job.postedAt,
     ...(job.expiresAt ? { validThrough: job.expiresAt } : {}),
     ...(job.salary ? { baseSalary: parseSalary(job.salary) } : {}),
+    directApply: true,
     url: `${SITE_URL}/job/${job.slug}`,
     skills: job.skills.join(', '),
   }
@@ -99,11 +100,68 @@ export function breadcrumbSchema(crumbs: Crumb[]): object {
   }
 }
 
+export function itemListSchema(jobs: Job[], pageUrl: string): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    url: pageUrl,
+    numberOfItems: jobs.length,
+    itemListElement: jobs.map((job, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${SITE_URL}/job/${job.slug}`,
+      name: `${job.title} — ${job.company}`,
+    })),
+  }
+}
+
+export function faqPageSchema(faqs: { q: string; a: string }[]): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  }
+}
+
+export function organizationSchema(): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'CDC Universitas Stekom',
+    alternateName: 'Career Development Center Universitas STEKOM',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    description: 'Career Development Center resmi Universitas STEKOM, menghubungkan pencari kerja dengan peluang karir terbaik.',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Jl. Majapahit No.605',
+      addressLocality: 'Semarang',
+      addressRegion: 'Jawa Tengah',
+      postalCode: '50272',
+      addressCountry: 'ID',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'pmbdigital@stekom.ac.id',
+      contactType: 'customer support',
+      areaServed: 'ID',
+      availableLanguage: 'Indonesian',
+    },
+    sameAs: [
+      'https://www.stekom.ac.id',
+    ],
+  }
+}
+
 export function websiteSchema(): object {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'CDC Stekom — Portal Karir',
+    name: 'CDC Universitas Stekom, Portal Karir',
     url: SITE_URL,
     potentialAction: {
       '@type': 'SearchAction',

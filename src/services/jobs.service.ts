@@ -1,4 +1,5 @@
 import { USE_MOCK, REVALIDATE_JOBS, REVALIDATE_CATEGORIES, PER_PAGE } from '@/config/api'
+import { SALARY_RANGES } from '@/config/filters'
 import type { Job, JobsResponse, JobsParams, Category, Location, TipeKerja } from '@/types'
 import { apiFetch } from './api-client'
 import {
@@ -7,6 +8,13 @@ import {
   mockLocations,
   mockTipeKerja,
 } from '@/mocks/jobs'
+
+function parseSalaryMin(salary?: string): number {
+  if (!salary) return 0
+  const match = salary.match(/[\d.]+/)
+  if (!match) return 0
+  return parseInt(match[0].replace(/\./g, ''), 10)
+}
 
 function filterMockJobs(jobs: Job[], params: JobsParams): JobsResponse {
   let filtered = [...jobs]
@@ -28,6 +36,18 @@ function filterMockJobs(jobs: Job[], params: JobsParams): JobsResponse {
   }
   if (params.employmentType) {
     filtered = filtered.filter((j) => j.employmentTypeSlug === params.employmentType)
+  }
+  if (params.salaryRange) {
+    const range = SALARY_RANGES.find((r) => r.slug === params.salaryRange)
+    if (range) {
+      filtered = filtered.filter((j) => {
+        const min = parseSalaryMin(j.salary)
+        return min >= range.min && min < range.max
+      })
+    }
+  }
+  if (params.experienceLevel) {
+    filtered = filtered.filter((j) => j.experienceLevel === params.experienceLevel)
   }
 
   const page = params.page ?? 1
@@ -51,6 +71,8 @@ export async function fetchJobs(params: JobsParams = {}): Promise<JobsResponse> 
   if (params.category) qs.set('category', params.category)
   if (params.location) qs.set('location', params.location)
   if (params.employmentType) qs.set('employment_type', params.employmentType)
+  if (params.salaryRange) qs.set('salary_range', params.salaryRange)
+  if (params.experienceLevel) qs.set('experience_level', params.experienceLevel)
 
   return apiFetch<JobsResponse>(`/jobs?${qs}`, { revalidate: REVALIDATE_JOBS })
 }

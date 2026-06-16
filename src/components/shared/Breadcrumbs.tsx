@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import {
   Breadcrumb,
@@ -19,12 +20,14 @@ export function Breadcrumbs({ crumbs, currentLabel }: BreadcrumbsProps) {
     <Breadcrumb aria-label="Navigasi halaman">
       <BreadcrumbList>
         {crumbs.map((c) => (
-          <BreadcrumbItem key={c.href}>
-            <BreadcrumbLink render={<Link href={c.href} className="cursor-pointer" />}>
-              {c.label}
-            </BreadcrumbLink>
+          <Fragment key={c.href}>
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href={c.href} className="cursor-pointer" />}>
+                {c.label}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
             <BreadcrumbSeparator />
-          </BreadcrumbItem>
+          </Fragment>
         ))}
         <BreadcrumbItem>
           <BreadcrumbPage>{currentLabel}</BreadcrumbPage>

@@ -37,6 +37,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'teknologi',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'junior',
     salary: 'Rp 6.000.000 – 9.000.000',
     description: `<p>Kami mencari Frontend Developer berpengalaman untuk bergabung dengan tim engineering kami di Semarang.</p>
 <p>Anda akan bertanggung jawab membangun antarmuka pengguna yang responsif dan performatif menggunakan teknologi web modern.</p>
@@ -69,6 +70,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'marketing',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'junior',
     salary: 'Rp 4.500.000 – 6.500.000',
     description: `<p>Bergabunglah dengan tim marketing kami sebagai Digital Marketing Specialist dan bantu kami mengembangkan brand awareness secara online.</p>
 <h3>Tanggung Jawab</h3>
@@ -100,6 +102,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'desain',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'junior',
     salary: 'Rp 7.000.000 – 10.000.000',
     description: `<p>Kami membutuhkan UI/UX Designer yang kreatif dan berpengalaman untuk merancang pengalaman pengguna yang luar biasa.</p>
 <h3>Tanggung Jawab</h3>
@@ -130,6 +133,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'teknologi',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'mid',
     salary: 'Rp 7.500.000 – 11.000.000',
     description: `<p>Kami mencari Backend Developer dengan keahlian Node.js untuk membangun API yang skalabel dan andal.</p>
 <h3>Tanggung Jawab</h3>
@@ -160,6 +164,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'keuangan',
     employmentType: 'Magang',
     employmentTypeSlug: 'magang',
+    experienceLevel: 'fresh-graduate',
     salary: 'Rp 1.200.000 – 1.500.000',
     description: `<p>Kesempatan magang bagi mahasiswa/i jurusan Akuntansi atau Keuangan untuk mendapatkan pengalaman kerja nyata.</p>
 <h3>Tanggung Jawab</h3>
@@ -190,6 +195,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'marketing',
     employmentType: 'Part Time',
     employmentTypeSlug: 'part-time',
+    experienceLevel: 'fresh-graduate',
     salary: 'Rp 2.000.000 – 3.500.000',
     description: `<p>Kami mencari Content Creator berbakat yang mampu menciptakan konten menarik untuk berbagai platform media sosial.</p>
 <h3>Tanggung Jawab</h3>
@@ -221,6 +227,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'teknologi',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'junior',
     salary: 'Rp 8.000.000 – 12.000.000',
     description: `<p>Posisi Data Analyst untuk membantu bisnis mengambil keputusan berbasis data.</p>
 <h3>Tanggung Jawab</h3>
@@ -250,6 +257,7 @@ export const mockJobs: Job[] = [
     categorySlug: 'pendidikan',
     employmentType: 'Full Time',
     employmentTypeSlug: 'full-time',
+    experienceLevel: 'junior',
     salary: 'Rp 3.500.000 – 5.000.000',
     description: `<p>Kami membutuhkan Guru Matematika yang berdedikasi untuk mendidik siswa SMA.</p>
 <h3>Tanggung Jawab</h3>
@@ -266,5 +274,128 @@ export const mockJobs: Job[] = [
     skills: ['Matematika', 'Pengajaran', 'Kurikulum Merdeka'],
     postedAt: '2026-06-07T08:00:00Z',
     expiresAt: '2026-07-07T23:59:00Z',
+  },
+  {
+    id: '9',
+    slug: 'senior-mobile-developer-jakarta',
+    title: 'Senior Mobile Developer (Flutter)',
+    company: 'PT Gojek Indonesia',
+    location: 'Jakarta',
+    locationSlug: 'jakarta',
+    category: 'Teknologi',
+    categorySlug: 'teknologi',
+    employmentType: 'Full Time',
+    employmentTypeSlug: 'full-time',
+    experienceLevel: 'senior',
+    salary: 'Rp 15.000.000 – 25.000.000',
+    description: `<p>Kami mencari Senior Mobile Developer Flutter yang berpengalaman untuk memimpin pengembangan aplikasi mobile skala besar.</p>
+<h3>Tanggung Jawab</h3>
+<ul>
+<li>Merancang dan memimpin arsitektur aplikasi Flutter</li>
+<li>Mentoring tim junior dan mid-level developer</li>
+<li>Berkoordinasi dengan Product dan Design untuk roadmap fitur</li>
+<li>Memastikan standar kualitas kode dan performa aplikasi</li>
+</ul>`,
+    requirements: [
+      'Pengalaman minimal 5 tahun di mobile development',
+      'Minimal 3 tahun dengan Flutter/Dart',
+      'Berpengalaman memimpin tim engineering',
+      'Familiar dengan CI/CD dan app store deployment',
+    ],
+    skills: ['Flutter', 'Dart', 'iOS', 'Android', 'Firebase', 'CI/CD'],
+    postedAt: '2026-06-15T08:00:00Z',
+    expiresAt: '2026-07-15T23:59:00Z',
+  },
+  {
+    id: '10',
+    slug: 'marketing-executive-fresh-graduate-semarang',
+    title: 'Marketing Executive (Fresh Graduate)',
+    company: 'PT Unilever Indonesia',
+    location: 'Semarang',
+    locationSlug: 'semarang',
+    category: 'Marketing',
+    categorySlug: 'marketing',
+    employmentType: 'Full Time',
+    employmentTypeSlug: 'full-time',
+    experienceLevel: 'fresh-graduate',
+    salary: 'Rp 4.000.000 – 5.500.000',
+    description: `<p>Program khusus fresh graduate untuk bergabung sebagai Marketing Executive dan memulai karir di industri FMCG.</p>
+<h3>Tanggung Jawab</h3>
+<ul>
+<li>Mendukung eksekusi kampanye marketing nasional</li>
+<li>Menganalisis data pasar dan kompetitor</li>
+<li>Berkoordinasi dengan distributor dan retailer</li>
+<li>Menyiapkan laporan performa brand</li>
+</ul>`,
+    requirements: [
+      'Fresh graduate S1 semua jurusan (IPK min 3.00)',
+      'Aktif berorganisasi semasa kuliah',
+      'Kemampuan komunikasi dan presentasi yang baik',
+      'Bersedia ditempatkan di area Semarang',
+    ],
+    skills: ['Marketing', 'Analisis Data', 'Komunikasi', 'MS Office', 'Presentasi'],
+    postedAt: '2026-06-14T10:00:00Z',
+    expiresAt: '2026-07-14T23:59:00Z',
+  },
+  {
+    id: '11',
+    slug: 'senior-data-engineer-jakarta',
+    title: 'Senior Data Engineer',
+    company: 'PT Tokopedia',
+    location: 'Jakarta',
+    locationSlug: 'jakarta',
+    category: 'Teknologi',
+    categorySlug: 'teknologi',
+    employmentType: 'Full Time',
+    employmentTypeSlug: 'full-time',
+    experienceLevel: 'senior',
+    salary: 'Rp 18.000.000 – 30.000.000',
+    description: `<p>Posisi Senior Data Engineer untuk membangun dan mengelola infrastruktur data skala besar di ekosistem Tokopedia.</p>
+<h3>Tanggung Jawab</h3>
+<ul>
+<li>Merancang dan membangun data pipeline yang handal</li>
+<li>Mengelola data warehouse dan data lake</li>
+<li>Optimasi query dan performa data platform</li>
+<li>Berkolaborasi dengan tim Data Science dan Analytics</li>
+</ul>`,
+    requirements: [
+      'Pengalaman minimal 5 tahun di data engineering',
+      'Menguasai Apache Spark, Kafka, dan Airflow',
+      'Berpengalaman dengan BigQuery atau Snowflake',
+      'Familiar dengan cloud platform (GCP/AWS)',
+    ],
+    skills: ['Apache Spark', 'Kafka', 'Airflow', 'BigQuery', 'Python', 'SQL'],
+    postedAt: '2026-06-13T09:00:00Z',
+    expiresAt: '2026-07-13T23:59:00Z',
+  },
+  {
+    id: '12',
+    slug: 'graphic-designer-freelance-yogyakarta',
+    title: 'Graphic Designer (Freelance)',
+    company: 'Agensi Kreatif Jogja',
+    location: 'Yogyakarta',
+    locationSlug: 'yogyakarta',
+    category: 'Desain',
+    categorySlug: 'desain',
+    employmentType: 'Freelance',
+    employmentTypeSlug: 'freelance',
+    experienceLevel: 'fresh-graduate',
+    salary: 'Rp 2.500.000 – 4.000.000',
+    description: `<p>Kami membuka peluang freelance untuk Graphic Designer berbakat yang ingin mengembangkan portfolio sambil mendapatkan penghasilan.</p>
+<h3>Tanggung Jawab</h3>
+<ul>
+<li>Membuat desain visual untuk kebutuhan marketing klien</li>
+<li>Merancang konten media sosial, banner, dan materi cetak</li>
+<li>Berkolaborasi remote dengan tim kreatif</li>
+</ul>`,
+    requirements: [
+      'Menguasai Adobe Illustrator dan Photoshop',
+      'Portfolio desain yang menarik',
+      'Bisa bekerja dengan deadline ketat',
+      'Terbuka untuk mahasiswa dan fresh graduate',
+    ],
+    skills: ['Adobe Illustrator', 'Photoshop', 'Canva', 'Typography', 'Branding'],
+    postedAt: '2026-06-12T14:00:00Z',
+    expiresAt: '2026-07-12T23:59:00Z',
   },
 ]

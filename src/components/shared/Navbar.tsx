@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Briefcase, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
   { label: 'Cari Lowongan', href: '/loker' },
@@ -13,9 +14,9 @@ const NAV_LINKS = [
 ]
 
 function isActive(pathname: string, href: string) {
-  const base = href.split('#')[0]
-  if (base === '/') return pathname === '/'
-  return pathname.startsWith(base)
+  if (href.includes('#')) return false
+  if (href === '/') return pathname === '/'
+  return pathname.startsWith(href)
 }
 
 export function Navbar() {
@@ -29,15 +30,18 @@ export function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 cursor-pointer shrink-0"
-          aria-label="CDC Stekom — Halaman Utama"
+          className="flex items-center cursor-pointer shrink-0"
+          aria-label="CDC Universitas Stekom, Halaman Utama"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Briefcase className="h-4 w-4 text-white" aria-hidden="true" />
-          </span>
-          <span className="text-[15px] font-bold text-brand-text">
-            CDC <span className="text-primary">Stekom</span>
-          </span>
+          <Image
+            src="/logo.png"
+            alt="STEKOM Career Development"
+            width={180}
+            height={44}
+            className="h-9 w-auto object-contain"
+            priority
+            unoptimized
+          />
         </Link>
 
         {/* Desktop nav */}

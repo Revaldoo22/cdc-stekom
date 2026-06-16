@@ -4,6 +4,48 @@ import { useRouter } from 'next/navigation'
 import { Search, MapPin, Layers, ChevronDown, Check } from 'lucide-react'
 import type { Category, Location } from '@/types'
 
+const TYPING_KEYWORDS = [
+  'Frontend Developer',
+  'Data Analyst',
+  'Marketing Manager',
+  'UI/UX Designer',
+  'Akuntansi',
+  'Software Engineer',
+  'Content Creator',
+  'Fresh Graduate',
+  'Desain Grafis',
+  'Business Development',
+]
+
+function useTypingPlaceholder() {
+  const [text, setText] = useState('')
+  const [kidx, setKidx] = useState(0)
+  const [cidx, setCidx] = useState(0)
+  const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    const word = TYPING_KEYWORDS[kidx]
+
+    if (!deleting) {
+      if (cidx < word.length) {
+        const t = setTimeout(() => { setText(word.slice(0, cidx + 1)); setCidx(c => c + 1) }, 70)
+        return () => clearTimeout(t)
+      }
+      const t = setTimeout(() => setDeleting(true), 1800)
+      return () => clearTimeout(t)
+    } else {
+      if (cidx > 0) {
+        const t = setTimeout(() => { setText(word.slice(0, cidx - 1)); setCidx(c => c - 1) }, 35)
+        return () => clearTimeout(t)
+      }
+      setDeleting(false)
+      setKidx(i => (i + 1) % TYPING_KEYWORDS.length)
+    }
+  }, [cidx, deleting, kidx])
+
+  return text
+}
+
 interface Props {
   locations: Location[]
   categories: Category[]
@@ -94,7 +136,9 @@ function DropdownSelect({ options, value, onChange, placeholder, icon }: Dropdow
 export function HeroSearch({ locations, categories }: Props) {
   const router = useRouter()
   const [keyword, setKeyword] = useState('')
+  const [inputFocused, setInputFocused] = useState(false)
   const [location, setLocation] = useState('')
+  const typingText = useTypingPlaceholder()
   const [category, setCategory] = useState('')
 
   function handleSearch(e: FormEvent) {
@@ -115,15 +159,29 @@ export function HeroSearch({ locations, categories }: Props) {
       className="flex flex-col sm:flex-row bg-white rounded-2xl shadow-lg border border-white/20"
     >
       {/* Keyword */}
-      <label className="flex flex-1 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
+      <label className="relative flex flex-1 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
         <Search className="h-4.5 w-4.5 text-primary shrink-0" aria-hidden="true" />
-        <input
-          type="text"
-          placeholder="Posisi atau kata kunci..."
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          className="flex-1 min-w-0 py-4 bg-transparent text-sm font-medium text-brand-text placeholder:text-brand-muted outline-none"
-        />
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            aria-label="Posisi atau kata kunci"
+            className="w-full min-w-0 py-4 bg-transparent text-sm font-medium text-brand-text outline-none"
+          />
+          {/* Animated placeholder — shown only when empty and not focused */}
+          {!keyword && !inputFocused && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center text-sm font-medium text-brand-muted select-none"
+            >
+              {typingText}
+              <span className="ml-0.5 inline-block w-px h-4 bg-brand-muted animate-[blink_1s_step-end_infinite]" />
+            </span>
+          )}
+        </div>
       </label>
 
       {/* Location */}

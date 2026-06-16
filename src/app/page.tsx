@@ -2,53 +2,33 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   ArrowRight, Briefcase, CalendarDays, Clock, MapPin,
-  Monitor, Megaphone, Palette, DollarSign, GraduationCap,
-  Truck, Coins, ShieldCheck, Zap, Video,
+  Coins, ShieldCheck, Zap, Video,
 } from 'lucide-react'
-import type { LucideProps } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { JobCard } from '@/components/shared/JobCard'
 import { HeroSearch } from '@/features/jobs/HeroSearch'
+import { PaperPlane } from '@/features/jobs/PaperPlane'
 import { fetchJobs, fetchCategories, fetchLocations } from '@/services/jobs.service'
 import { fetchEvents } from '@/services/events.service'
+import { seoUrl } from '@/lib/seo-urls'
 
 export const revalidate = 3600
 
-type IconComponent = React.FC<LucideProps>
-
-const CITY_PHOTOS: Record<string, string> = {
-  semarang:   'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=600&q=75',
-  jakarta:    'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=600&q=75',
-  surabaya:   'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=600&q=75',
-  yogyakarta: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=75',
-  bandung:    'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=600&q=75',
-}
-
-const CITY_FALLBACK = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=600&q=75'
-
-const CATEGORY_ICONS: Record<string, IconComponent> = {
-  teknologi: Monitor,
-  marketing: Megaphone,
-  desain: Palette,
-  keuangan: DollarSign,
-  pendidikan: GraduationCap,
-  logistik: Truck,
-}
 
 const QUICK_FILTERS = [
-  { label: 'Fresh Graduate', href: '/tipe-pekerjaan/full-time' },
-  { label: 'Magang', href: '/tipe-pekerjaan/magang' },
-  { label: 'Full Time', href: '/tipe-pekerjaan/full-time' },
-  { label: 'Part Time', href: '/tipe-pekerjaan/part-time' },
-  { label: 'Freelance', href: '/tipe-pekerjaan/freelance' },
+  { label: 'Fresh Graduate', href: seoUrl.employmentType('full-time') },
+  { label: 'Magang', href: seoUrl.employmentType('magang') },
+  { label: 'Full Time', href: seoUrl.employmentType('full-time') },
+  { label: 'Part Time', href: seoUrl.employmentType('part-time') },
+  { label: 'Freelance', href: seoUrl.employmentType('freelance') },
 ]
 
 const VALUES = [
   {
     icon: Coins,
     title: 'Gratis Selamanya',
-    desc: 'Tidak ada biaya pendaftaran. Semua fitur tersedia gratis untuk mahasiswa dan alumni Stekom.',
+    desc: 'Tidak ada biaya pendaftaran. Semua fitur tersedia gratis untuk semua pencari kerja.',
   },
   {
     icon: ShieldCheck,
@@ -67,7 +47,7 @@ const TESTIMONIALS = [
     photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&h=96&fit=crop&q=80',
     name: 'Sari Dewi',
     role: 'Frontend Developer @ Tokopedia',
-    quote: 'Berkat CDC Stekom, saya berhasil mendapatkan pekerjaan impian hanya 2 minggu setelah lulus.',
+    quote: 'Berkat CDC Universitas Stekom, saya berhasil mendapatkan pekerjaan impian hanya 2 minggu setelah lulus.',
   },
   {
     photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&q=80',
@@ -79,7 +59,7 @@ const TESTIMONIALS = [
     photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&q=80',
     name: 'Rina Kusuma',
     role: 'Digital Marketing @ Shopee',
-    quote: 'Platform ini gratis dan semua lowongannya terverifikasi. Saya sangat merekomendasikan untuk teman Stekom.',
+    quote: 'Platform ini gratis dan semua lowongannya terverifikasi. Saya sangat merekomendasikan untuk semua pencari kerja.',
   },
 ]
 
@@ -97,55 +77,57 @@ export default async function HomePage() {
   return (
     <>
       {/* ── Hero Search ── */}
-      <section className="bg-primary border-b border-primary">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+      <section className="relative bg-primary border-b border-primary">
+        {/* Decorative layer — overflow clipped here, not on section, so dropdown can escape */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Right: hero image */}
+          <div className="hidden lg:block absolute inset-y-0 right-0 w-[44%]">
+            <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-primary to-transparent z-10" />
+            <Image
+              src="/images/hero/hero.png"
+              alt="Mahasiswa siap berkarir bersama CDC Universitas Stekom"
+              fill
+              sizes="44vw"
+              quality={100}
+              className="object-cover object-center brightness-[1.03] contrast-[1.08] saturate-[1.18] [image-rendering:high-quality]"
+              priority
+            />
+          </div>
+          {/* Paper plane animation */}
+          <div className="hidden lg:block absolute top-6 z-20" style={{ right: 'calc(44% + 8px)' }}>
+            <PaperPlane />
+          </div>
+        </div>
 
-            {/* Left: text + search */}
-            <div className="flex-1 min-w-0">
-              <Badge className="mb-4 bg-white/20 text-white hover:bg-white/20 border-0">
-                Portal Karir Resmi Stekom
-              </Badge>
-              <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-[2.75rem]">
-                Temukan Pekerjaan yang
-                <br /> Tepat untuk Anda
-              </h1>
-              <p className="mt-3 text-base text-white/75 max-w-lg">
-                Ratusan lowongan dari perusahaan terpercaya, khusus mahasiswa &amp; alumni Universitas STEKOM.
-              </p>
+        {/* Left: text + search — constrained to max-w-7xl */}
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="py-12 lg:py-14 lg:max-w-[58%]">
+            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/20 border-0">
+              Portal Karir Resmi Universitas STEKOM
+            </Badge>
+            <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-[2.75rem] leading-tight">
+              Temukan Pekerjaan yang
+              <br /> Tepat untuk Anda
+            </h1>
+            <p className="mt-3 text-base text-white/75 max-w-lg">
+              Ratusan lowongan dari perusahaan terpercaya. Daftar gratis, lamar langsung tanpa perantara.
+            </p>
 
-              <div className="mt-7">
-                <HeroSearch locations={locations} categories={categories} />
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {QUICK_FILTERS.map(({ label, href }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-medium text-white/80 transition-colors hover:bg-white/20 hover:text-white cursor-pointer"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
+            <div className="mt-7">
+              <HeroSearch locations={locations} categories={categories} />
             </div>
 
-            {/* Right: Unsplash hero image */}
-            <div className="hidden lg:flex flex-col gap-3 w-[400px] shrink-0">
-              <div className="relative rounded-2xl overflow-hidden">
-                <Image
-                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800&q=80"
-                  alt="Tim profesional bekerja bersama di kantor modern"
-                  width={800}
-                  height={500}
-                  className="w-full h-[300px] object-cover"
-                  priority
-                />
-              </div>
-              {/* Stat pills below image */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {QUICK_FILTERS.map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-medium text-white/80 transition-colors hover:bg-white/20 hover:text-white cursor-pointer"
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
-
           </div>
         </div>
       </section>
@@ -170,10 +152,10 @@ export default async function HomePage() {
         <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
             { label: 'Semua', href: '/loker' },
-            { label: 'Full Time', href: '/tipe-pekerjaan/full-time' },
-            { label: 'Magang', href: '/tipe-pekerjaan/magang' },
-            { label: 'Part Time', href: '/tipe-pekerjaan/part-time' },
-            { label: 'Freelance', href: '/tipe-pekerjaan/freelance' },
+            { label: 'Full Time', href: seoUrl.employmentType('full-time') },
+            { label: 'Magang', href: seoUrl.employmentType('magang') },
+            { label: 'Part Time', href: seoUrl.employmentType('part-time') },
+            { label: 'Freelance', href: seoUrl.employmentType('freelance') },
           ].map(({ label, href }, i) => (
             <Link
               key={label}
@@ -218,22 +200,15 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map((cat) => {
-              const Icon: IconComponent = CATEGORY_ICONS[cat.slug] ?? Briefcase
-              return (
-                <Link
-                  key={cat.slug}
-                  href={`/kategori/${cat.slug}`}
-                  className="group flex flex-col items-center rounded-xl border border-border bg-white p-4 text-center transition-all duration-200 hover:border-primary hover:shadow-md cursor-pointer"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2 group-hover:bg-primary transition-all duration-200">
-                    <Icon className="h-5 w-5 text-primary group-hover:text-white transition-colors duration-200" />
-                  </span>
-                  <span className="text-sm font-medium text-brand-text group-hover:text-primary transition-colors">{cat.name}</span>
-                  <span className="text-xs text-brand-muted mt-0.5">{cat.count} loker</span>
-                </Link>
-              )
-            })}
+            {categories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={seoUrl.category(cat.slug)}
+                className="group rounded-xl border border-border bg-white px-4 py-5 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+              >
+                <p className="font-semibold text-brand-text group-hover:text-primary transition-colors">{cat.name}</p>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -247,7 +222,7 @@ export default async function HomePage() {
               <h2 className="text-2xl font-bold text-brand-text">Loker di Kota Populer</h2>
             </div>
             <Link
-              href="/daerah"
+              href="/loker"
               className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               Lihat semua kota <ArrowRight className="h-3.5 w-3.5" />
@@ -255,36 +230,20 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {locations.map((loc) => {
-              const photo = CITY_PHOTOS[loc.slug] ?? CITY_FALLBACK
-              return (
-                <Link
-                  key={loc.slug}
-                  href={`/daerah/${loc.slug}`}
-                  className="group relative overflow-hidden rounded-xl h-40 sm:h-48 cursor-pointer block"
-                >
-                  <Image
-                    src={photo}
-                    alt={`Loker di ${loc.name}`}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {/* Dark overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  {/* Text */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white font-bold text-sm leading-tight">{loc.name}</p>
-                    <p className="text-white/70 text-[11px] mt-0.5">{loc.count} lowongan</p>
-                  </div>
-                </Link>
-              )
-            })}
+            {locations.map((loc) => (
+              <Link
+                key={loc.slug}
+                href={seoUrl.location(loc.slug)}
+                className="group rounded-xl border border-border bg-white px-4 py-5 hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+              >
+                <p className="font-semibold text-brand-text group-hover:text-primary transition-colors">{loc.name}</p>
+              </Link>
+            ))}
           </div>
 
           <div className="mt-4 sm:hidden flex justify-center">
             <Link
-              href="/daerah"
+              href="/loker"
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               Lihat semua kota <ArrowRight className="h-3.5 w-3.5" />
@@ -382,7 +341,7 @@ export default async function HomePage() {
       <section className="bg-brand-bg border-y border-border">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-brand-text text-center mb-2">Alumni yang Berhasil</h2>
-          <p className="text-center text-sm text-brand-muted mb-10">Mereka menemukan karir impian melalui CDC Stekom</p>
+          <p className="text-center text-sm text-brand-muted mb-10">Mereka menemukan karir impian melalui CDC Universitas Stekom</p>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {TESTIMONIALS.map(({ photo, name, role, quote }) => (
               <div key={name} className="rounded-xl border border-border bg-white p-6 flex flex-col gap-4">
@@ -408,9 +367,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Kenapa CDC Stekom ── */}
+      {/* ── Kenapa CDC Universitas Stekom ── */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-brand-text text-center mb-10">Kenapa CDC Stekom?</h2>
+        <h2 className="text-2xl font-bold text-brand-text text-center mb-10">Kenapa CDC Universitas Stekom?</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {VALUES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex flex-col items-center text-center rounded-xl border border-border bg-background p-6">

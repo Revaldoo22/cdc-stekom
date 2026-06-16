@@ -6,8 +6,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/loker', '/job/', '/kategori/', '/daerah/', '/tipe-pekerjaan/', '/event/'],
-        disallow: ['/api/', '/*?*'],
+        allow: ['/'],
+        disallow: [
+          '/api/',
+          '/search',
+          '/*?page=',
+          '/*?sort=',
+          '/*?salary=',
+          '/*?experience=',
+          '/*?keyword=',
+          '/*?category=',
+          '/*?location=',
+          '/*?tipe=',
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
