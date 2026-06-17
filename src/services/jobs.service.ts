@@ -1,7 +1,7 @@
-import { USE_MOCK, REVALIDATE_JOBS, REVALIDATE_CATEGORIES, PER_PAGE } from '@/config/api'
+import { USE_MOCK, PER_PAGE } from '@/config/api'
 import { SALARY_RANGES } from '@/config/filters'
 import type { Job, JobsResponse, JobsParams, Category, Location, TipeKerja } from '@/types'
-import { apiFetch } from './api-client'
+import { getCdcJobs, getCdcCategories } from './cdc-loker.service'
 import {
   mockJobs,
   mockCategories,
@@ -16,7 +16,9 @@ function parseSalaryMin(salary?: string): number {
   return parseInt(match[0].replace(/\./g, ''), 10)
 }
 
-function filterMockJobs(jobs: Job[], params: JobsParams): JobsResponse {
+// The CDC API has no server-side filtering, so we filter/paginate the fetched
+// batch here — the same logic that drives the mock data.
+function filterJobs(jobs: Job[], params: JobsParams): JobsResponse {
   let filtered = [...jobs]
 
   if (params.keyword) {
@@ -61,44 +63,47 @@ function filterMockJobs(jobs: Job[], params: JobsParams): JobsResponse {
   }
 }
 
+async function allJobs(): Promise<Job[]> {
+  return USE_MOCK ? mockJobs : getCdcJobs()
+}
+
 export async function fetchJobs(params: JobsParams = {}): Promise<JobsResponse> {
-  if (USE_MOCK) return filterMockJobs(mockJobs, params)
-
-  const qs = new URLSearchParams()
-  if (params.page) qs.set('page', String(params.page))
-  if (params.perPage) qs.set('per_page', String(params.perPage))
-  if (params.keyword) qs.set('keyword', params.keyword)
-  if (params.category) qs.set('category', params.category)
-  if (params.location) qs.set('location', params.location)
-  if (params.employmentType) qs.set('employment_type', params.employmentType)
-  if (params.salaryRange) qs.set('salary_range', params.salaryRange)
-  if (params.experienceLevel) qs.set('experience_level', params.experienceLevel)
-
-  return apiFetch<JobsResponse>(`/jobs?${qs}`, { revalidate: REVALIDATE_JOBS })
+  return filterJobs(await allJobs(), params)
 }
 
 export async function fetchJobBySlug(slug: string): Promise<Job | null> {
-  if (USE_MOCK) return mockJobs.find((j) => j.slug === slug) ?? null
-  try {
-    return await apiFetch<Job>(`/jobs/${slug}`, { revalidate: REVALIDATE_JOBS })
-  } catch {
-    return null
-  }
+  const jobs = await allJobs()
+  return jobs.find((j) => j.slug === slug) ?? null
+}
+
+// Resolve a single job by id from the full batch — used for ?jobId= deep links,
+// where the selected job may not be on the current page's slice.
+export async function fetchJobById(id: string): Promise<Job | null> {
+  if (!id) return null
+  const jobs = await allJobs()
+  return jobs.find((j) => j.id === id) ?? null
 }
 
 export async function fetchCategories(): Promise<Category[]> {
   if (USE_MOCK) return mockCategories
-  return apiFetch<Category[]>('/categories', { revalidate: REVALIDATE_CATEGORIES })
+  // Show only categories that actually have jobs in the current batch, with counts.
+  const [cats, jobs] = await Promise.all([getCdcCategories(), getCdcJobs()])
+  const counts = new Map<string, number>()
+  for (const j of jobs) counts.set(j.categorySlug, (counts.get(j.categorySlug) ?? 0) + 1)
+  return cats
+    .map((c) => ({ ...c, count: counts.get(c.slug) ?? 0 }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count)
 }
 
 export async function fetchLocations(): Promise<Location[]> {
   if (USE_MOCK) return mockLocations
-  return apiFetch<Location[]>('/locations', { revalidate: REVALIDATE_CATEGORIES })
+  return [] // API exposes only numeric region codes (no names) — no location filter for now
 }
 
 export async function fetchTipeKerja(): Promise<TipeKerja[]> {
   if (USE_MOCK) return mockTipeKerja
-  return apiFetch<TipeKerja[]>('/employment-types', { revalidate: REVALIDATE_CATEGORIES })
+  return [] // js_loker is a numeric code with no name endpoint — no work-type filter for now
 }
 
 export async function fetchRelatedJobs(job: Job, limit = 5): Promise<Job[]> {

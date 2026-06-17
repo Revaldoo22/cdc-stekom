@@ -11,8 +11,9 @@ export async function generateSitemaps() {
 
 export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
+  const sid = Number(id) // Next may pass the id as a string ("0"); normalise to number
 
-  if (id === 0) {
+  if (sid === 0) {
     return [
       { url: SITE_URL,                                   lastModified: now, changeFrequency: 'daily',  priority: 1.0 },
       { url: `${SITE_URL}/loker`,                        lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
@@ -22,7 +23,7 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
     ]
   }
 
-  if (id === 1) {
+  if (sid === 1) {
     const { jobs } = await fetchJobs({ perPage: 500 })
     return jobs
       .filter((j) => !j.expiresAt || new Date(j.expiresAt) > now)
@@ -34,7 +35,7 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
       }))
   }
 
-  if (id === 2) {
+  if (sid === 2) {
     const [{ jobs }, categories, locations, tipeKerja] = await Promise.all([
       fetchJobs({ perPage: 500 }),
       fetchCategories(),
@@ -67,7 +68,7 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
     return [...categoryRoutes, ...locationRoutes, ...tipeRoutes, ...combinedRoutes]
   }
 
-  if (id === 3) {
+  if (sid === 3) {
     const events = await fetchEvents()
     return events.map((e) => ({
       url: `${SITE_URL}/event/${e.slug}`,

@@ -6,6 +6,7 @@ import { JsonLd } from '@/components/shared/JsonLd'
 import { JobListingClient } from '@/features/jobs/JobListingClient'
 import {
   fetchJobs,
+  fetchJobById,
   fetchCategories,
   fetchLocations,
   fetchTipeKerja,
@@ -42,12 +43,14 @@ export default async function LokerPage({ searchParams }: PageProps) {
   const tipe = params.tipe ?? ''
   const salary = params.salary ?? ''
   const experience = params.experience ?? ''
+  const jobId = params.jobId ?? ''
 
-  const [{ jobs, total }, categories, locations, tipeKerja] = await Promise.all([
+  const [{ jobs, total }, categories, locations, tipeKerja, selectedJob] = await Promise.all([
     fetchJobs({ page, perPage: PER_PAGE, keyword, category, location, employmentType: tipe, salaryRange: salary, experienceLevel: experience }),
     fetchCategories(),
     fetchLocations(),
     fetchTipeKerja(),
+    fetchJobById(jobId),
   ])
 
   const totalPages = Math.ceil(total / PER_PAGE)
@@ -88,6 +91,8 @@ export default async function LokerPage({ searchParams }: PageProps) {
           initialTipe={tipe}
           initialSalary={salary}
           initialExperience={experience}
+          initialJobId={jobId}
+          initialSelectedJob={selectedJob}
         />
       </Suspense>
     </>

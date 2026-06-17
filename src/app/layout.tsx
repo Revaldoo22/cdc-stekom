@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/shared/Navbar'
@@ -34,19 +35,17 @@ export const metadata: Metadata = {
     siteName: 'CDC Universitas Stekom',
   },
   twitter: { card: 'summary_large_image' },
+  formatDetection: { telephone: false, date: false, email: false, address: false },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${inter.variable} ${plusJakarta.variable} h-full antialiased`} suppressHydrationWarning>
-      <head suppressHydrationWarning>
-        <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-        {/* Strip attributes injected by Bank Islam (BIS) browser extension before React hydrates */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var ATTRS=['bis_skin_checked','bis_use'];function strip(n){if(!n||!n.removeAttribute)return;ATTRS.forEach(function(a){n.removeAttribute(a)});if(n.querySelectorAll)n.querySelectorAll('[bis_skin_checked],[bis_use]').forEach(function(e){ATTRS.forEach(function(a){e.removeAttribute(a)})})}strip(document.documentElement);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(strip);if(m.type==='attributes'&&ATTRS.indexOf(m.attributeName)>-1)m.target.removeAttribute(m.attributeName)})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['bis_skin_checked','bis_use']})})()` }} />
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
+        {/* Runs before hydration; strips extension-injected attrs (BIS) that break hydration. External src avoids the inline-script warning. */}
+        <Script src="/strip-ext-attrs.js" strategy="beforeInteractive" />
         <JsonLd schema={websiteSchema()} />
         <JsonLd schema={organizationSchema()} />
-      </head>
-      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

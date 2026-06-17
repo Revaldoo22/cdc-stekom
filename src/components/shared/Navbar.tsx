@@ -7,8 +7,8 @@ import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
   { label: 'Cari Lowongan', href: '/loker' },
-  { label: 'Kategori', href: '/loker#kategori' },
-  { label: 'Lokasi', href: '/loker#lokasi' },
+  { label: 'Kategori', href: '/kategori' },
+  { label: 'Lokasi', href: '/daerah' },
   { label: 'Rekrutmen Offline', href: '/event/offline-recruitment' },
   { label: 'Virtual Job Fair', href: '/event/vjf' },
 ]

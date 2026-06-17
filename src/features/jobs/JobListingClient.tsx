@@ -3,8 +3,7 @@
 import { useState, useCallback, useTransition, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
   Search, MapPin, X, ChevronDown, Building2, BadgeDollarSign,
   Briefcase, Clock, CheckCircle2, Wrench, ArrowUpRight,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { Job, Category, Location, TipeKerja } from '@/types'
 import { SALARY_RANGES } from '@/config/filters'
+import { buildJobsUrl } from '@/lib/seo-urls'
 import { useSavedJobs } from '@/hooks/useSavedJobs'
 import { NoResults } from '@/components/shared/NoResults'
 import { Pagination } from '@/components/shared/Pagination'
@@ -27,10 +27,6 @@ function relativeTime(dateStr: string): string {
   if (days < 7)  return `${days} hari lalu`
   if (days < 30) return `${Math.floor(days / 7)} minggu lalu`
   return `${Math.floor(days / 30)} bulan lalu`
-}
-
-function companyInitials(name: string): string {
-  return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 }
 
 const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
@@ -63,7 +59,8 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
   const [open, setOpen]       = useState(false)
   const [rect, setRect]       = useState<DOMRect | null>(null)
   const [mounted, setMounted] = useState(false)
-  const btnRef = useRef<HTMLButtonElement>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const selected = options.find((o) => o.value === value)
   const active   = !!value
 
@@ -72,7 +69,12 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
   useEffect(() => {
     if (!open) return
     function onOutside(e: MouseEvent) {
-      if (!btnRef.current?.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      // The panel is portaled to <body>, so it's outside btnRef — must check it
+      // explicitly or clicking an option would close the menu before selecting.
+      if (!btnRef.current?.contains(target) && !panelRef.current?.contains(target)) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', onOutside)
     return () => document.removeEventListener('mousedown', onOutside)
@@ -87,6 +89,7 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
     mounted && open && rect
       ? createPortal(
           <div
+            ref={panelRef}
             style={{ position: 'fixed', top: rect.bottom + 6, left: rect.left, zIndex: 9999 }}
             className="min-w-50 max-h-72 overflow-y-auto rounded-2xl border border-border bg-white py-2 shadow-lg"
           >
@@ -179,23 +182,13 @@ function CompactJobCard({ job, isSelected, onSelect }: CompactJobCardProps) {
           : 'bg-white border-l-transparent hover:bg-slate-50/80'
       }`}
     >
-      {/* Company logo / initials */}
+      {/* Company icon */}
       <div className="shrink-0 mt-0.5">
-        {job.companyLogo ? (
-          <Image
-            src={job.companyLogo}
-            alt={job.company}
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-xl object-cover border border-border/60"
-          />
-        ) : (
-          <span className={`flex h-11 w-11 items-center justify-center rounded-xl border text-[11px] font-bold tracking-wide ${
-            isSelected ? 'border-primary/30 bg-primary/10 text-primary' : 'border-border/60 bg-slate-100 text-slate-500'
-          }`}>
-            {companyInitials(job.company)}
-          </span>
-        )}
+        <span className={`flex h-11 w-11 items-center justify-center rounded-xl border ${
+          isSelected ? 'border-primary/30 bg-primary/10 text-primary' : 'border-border/60 bg-slate-100 text-slate-400'
+        }`}>
+          <Building2 className="h-5 w-5" aria-hidden />
+        </span>
       </div>
 
       {/* Content */}
@@ -306,19 +299,9 @@ function JobDetailPanel({ job }: { job: Job }) {
 
           {/* Job header — observed by IntersectionObserver */}
           <div ref={headerRef} className="flex items-start gap-4 mb-5">
-            {job.companyLogo ? (
-              <Image
-                src={job.companyLogo}
-                alt={job.company}
-                width={56}
-                height={56}
-                className="h-14 w-14 rounded-2xl object-cover shrink-0 border border-border/60"
-              />
-            ) : (
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-slate-100 text-sm font-bold text-slate-500 tracking-wide">
-                {companyInitials(job.company)}
-              </span>
-            )}
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-slate-100 text-slate-400">
+              <Building2 className="h-6 w-6" aria-hidden />
+            </span>
             <div className="flex-1 min-w-0 pt-0.5">
               <h2 className="text-[19px] font-bold text-brand-text leading-snug">{job.title}</h2>
               <p className="text-sm text-brand-muted mt-1 font-medium">{job.company}</p>
@@ -486,50 +469,80 @@ interface JobListingClientProps {
   initialTipe: string
   initialSalary: string
   initialExperience: string
+  initialJobId?: string
+  initialSelectedJob?: Job | null
 }
 
 export function JobListingClient({
   jobs, total, categories, locations, tipeKerja,
   initialPage, initialKeyword, initialCategory,
   initialLocation, initialTipe, initialSalary, initialExperience,
+  initialJobId = '', initialSelectedJob = null,
 }: JobListingClientProps) {
-  const router       = useRouter()
-  const pathname     = usePathname()
-  const searchParams = useSearchParams()
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [keyword, setKeyword]         = useState(initialKeyword)
+  // Selection is driven by ?jobId= so it is deep-linkable (shareable / refresh-safe).
+  // Filter/page/search changes are real navigations that remount with a fresh
+  // initialJobId; a card click only updates this state + the URL (no reload).
+  const [selectedId, setSelectedId] = useState(initialJobId)
+  const [keyword, setKeyword]       = useState(initialKeyword)
 
-  // Reset selection on page/filter change, but never auto-select
-  const jobsKey = jobs.map((j) => j.id).join(',')
-  useEffect(() => {
-    setSelectedJob(null)
-  }, [jobsKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Prefer the job in the current page slice; fall back to the server-resolved
+  // deep-link job (which may live on another page of the full batch).
+  const selectedJob =
+    jobs.find((j) => j.id === selectedId)
+    ?? (initialSelectedJob?.id === selectedId ? initialSelectedJob : null)
+
+  // Open a job in the right panel and reflect it in the URL (?jobId=) without a
+  // full navigation — exactly like JobStreet's listing → detail interaction.
+  const selectJob = useCallback((job: Job) => {
+    setSelectedId(job.id)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('jobId', job.id)
+      window.history.replaceState(null, '', url.toString())
+    }
+  }, [])
+
+  // Current full filter state. A taxonomy change rebuilds the canonical URL
+  // (category/location/tipe → path, salary/experience → query) so the address
+  // bar always reflects the active filters — same behaviour as JobStreet.
+  const currentFilter = useCallback(
+    (): Parameters<typeof buildJobsUrl>[0] => ({
+      category:   initialCategory,
+      location:   initialLocation,
+      tipe:       initialTipe,
+      salary:     initialSalary,
+      experience: initialExperience,
+      keyword:    initialKeyword,
+    }),
+    [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience, initialKeyword],
+  )
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
-      const params = new URLSearchParams(searchParams.toString())
-      Object.entries(updates).forEach(([k, v]) => {
-        if (v) params.set(k, v); else params.delete(k)
-      })
-      params.delete('page')
-      startTransition(() => router.push(`${pathname}?${params.toString()}`))
+      // page always resets to 1 on any filter change (omitted → page 1)
+      const next = { ...currentFilter(), ...updates }
+      startTransition(() => router.push(buildJobsUrl(next)))
     },
-    [router, pathname, searchParams],
+    [router, currentFilter],
   )
 
   const handleSearch = useCallback(
-    (e: React.FormEvent) => { e.preventDefault(); updateParams({ keyword }) },
-    [keyword, updateParams],
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      // keyword and category are independent slots (JobStreet style) — a search
+      // sets the keyword and keeps any active category/location/tipe refinement.
+      startTransition(() => router.push(buildJobsUrl({ ...currentFilter(), keyword })))
+    },
+    [keyword, currentFilter, router],
   )
 
   const handlePageChange = useCallback(
     (page: number) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set('page', String(page))
-      startTransition(() => router.push(`${pathname}?${params.toString()}`))
+      startTransition(() => router.push(buildJobsUrl({ ...currentFilter(), page })))
     },
-    [router, pathname, searchParams],
+    [router, currentFilter],
   )
 
   const salaryOptions   = SALARY_RANGES.map((r) => ({ value: r.slug, label: r.label }))
@@ -547,66 +560,75 @@ export function JobListingClient({
     <div>
 
       {/* ── Sticky filter bar ── */}
-      <div className="sticky top-16 z-20 bg-[#0B2C48]">
+      <div className="sticky top-16 z-20 bg-gradient-to-b from-[#0B2C48] to-[#0A2540] shadow-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* Search row */}
-        <form onSubmit={handleSearch} className="flex gap-2.5 px-4 sm:px-6 py-3.5">
-          <label className="flex flex-1 items-center gap-2.5 rounded-xl border border-white/20 bg-white px-4 py-2.5 transition-all duration-150 focus-within:border-white focus-within:shadow-[0_0_0_3px_rgba(255,255,255,0.15)] cursor-text">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" aria-hidden />
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Cari posisi, keahlian, atau perusahaan..."
-              className="flex-1 bg-transparent text-sm text-brand-text placeholder:text-slate-400 outline-none"
-              aria-label="Cari lowongan"
-            />
-            {keyword && (
-              <button
-                type="button"
-                onClick={() => { setKeyword(''); updateParams({ keyword: '' }) }}
-                aria-label="Hapus pencarian"
-                className="cursor-pointer text-slate-400 hover:text-slate-600 transition-colors duration-150"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </label>
-          <button
-            type="submit"
-            className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/80 active:bg-primary/70 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B2C48]"
-          >
-            Cari
-          </button>
-        </form>
+          {/* Search row */}
+          <form onSubmit={handleSearch} className="flex gap-2.5 pt-4 pb-3">
+            <div className="group flex flex-1 items-center rounded-xl bg-white ring-1 ring-white/10 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:shadow-[0_4px_20px_-4px_rgba(29,78,216,0.5)]">
+              <span className="pl-4 pr-1 text-slate-400">
+                <Search className="h-[18px] w-[18px]" aria-hidden />
+              </span>
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Cari posisi, keahlian, atau perusahaan..."
+                className="flex-1 bg-transparent py-3 pr-2 text-sm text-brand-text placeholder:text-slate-400 outline-none"
+                aria-label="Cari lowongan"
+              />
+              {keyword && (
+                <button
+                  type="button"
+                  onClick={() => { setKeyword(''); updateParams({ keyword: '' }) }}
+                  aria-label="Hapus pencarian"
+                  className="mr-1 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors duration-150 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 text-sm font-semibold text-white hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B2C48]"
+            >
+              <Search className="h-4 w-4 sm:hidden" aria-hidden />
+              <span className="hidden sm:inline">Cari</span>
+            </button>
+          </form>
 
-        {/* Filter pills row */}
-        <div className="flex items-center gap-2 px-4 sm:px-6 pb-3">
-          <SlidersHorizontal className="h-3.5 w-3.5 text-white/40 shrink-0" aria-hidden />
-          <div className="flex items-center gap-2 flex-1">
-            <FilterPill dark label="Gaji"      icon={<BadgeDollarSign className="h-3.5 w-3.5" />} options={salaryOptions}   value={initialSalary}   onChange={(v) => updateParams({ salary: v })} />
-            <FilterPill dark label="Jenis"     icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     onChange={(v) => updateParams({ tipe: v })} />
-            <FilterPill dark label="Lokasi"    icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} onChange={(v) => updateParams({ location: v })} />
-            <FilterPill dark label="Bidang"                                                        options={categoryOptions} value={initialCategory} onChange={(v) => updateParams({ category: v })} />
-            {activeCount > 0 && (
-              <button
-                type="button"
-                onClick={() => startTransition(() => router.push(pathname))}
-                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-white/80 border border-white/20 hover:border-white/50 hover:text-white hover:bg-white/10 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                <X className="h-3 w-3" />
-                Hapus ({activeCount})
-              </button>
-            )}
+          {/* Filter pills row */}
+          <div className="flex items-center gap-2.5 pb-4">
+            <span className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold uppercase tracking-wide text-white/45">
+              <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+              Filter
+            </span>
+            <span className="h-4 w-px bg-white/15 shrink-0" aria-hidden />
+            <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-none">
+              <FilterPill dark label="Gaji"   icon={<BadgeDollarSign className="h-3.5 w-3.5" />} options={salaryOptions}   value={initialSalary}   onChange={(v) => updateParams({ salary: v })} />
+              <FilterPill dark label="Jenis"  icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     onChange={(v) => updateParams({ tipe: v })} />
+              <FilterPill dark label="Lokasi" icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} onChange={(v) => updateParams({ location: v })} />
+              <FilterPill dark label="Bidang"                                                    options={categoryOptions} value={initialCategory} onChange={(v) => updateParams({ category: v })} />
+              {activeCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => startTransition(() => router.push('/loker'))}
+                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <X className="h-3 w-3" />
+                  Reset ({activeCount})
+                </button>
+              )}
+            </div>
+            <p className="ml-2 shrink-0 text-[12.5px] font-medium text-white/55">
+              <span className="font-bold text-white">{total.toLocaleString('id-ID')}</span> lowongan
+            </p>
           </div>
-          <p className="ml-2 shrink-0 text-[12px] font-medium text-white/50">
-            {total.toLocaleString('id-ID')} loker
-          </p>
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="flex">
+      <div className="mx-auto flex max-w-7xl">
 
         {/* Left: job list */}
         <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen">
@@ -621,7 +643,7 @@ export function JobListingClient({
                   key={job.id}
                   job={job}
                   isSelected={selectedJob?.id === job.id}
-                  onSelect={setSelectedJob}
+                  onSelect={selectJob}
                 />
               ))}
               <div className="px-5 py-5 border-t border-border/60">
