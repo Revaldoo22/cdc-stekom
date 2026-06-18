@@ -21,6 +21,9 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    // generateSitemaps() produces segmented sitemaps at /sitemap/[id].xml — there
+    // is no /sitemap.xml index route, so list each segment explicitly.
+    // 0=static, 1=jobs, 2=taxonomy, 3=events
+    sitemap: [0, 1, 2, 3].map((id) => `${SITE_URL}/sitemap/${id}.xml`),
   }
 }

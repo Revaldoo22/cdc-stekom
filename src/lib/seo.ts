@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import type { Job, RecruitmentEvent } from '@/types'
 import { SITE_URL } from '@/config/api'
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
+// No manual default OG image — the file-based app/opengraph-image.tsx is applied
+// automatically by Next to every route, so we only set images when overriding it.
 
 export function generateJobMetadata(job: Job): Metadata {
   const title = `${job.title} di ${job.company} | CDC Universitas Stekom`
@@ -47,7 +48,7 @@ export function generateListingMetadata(opts: {
       description: opts.description,
       url,
       type: 'website',
-      images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630 }],
+      // images omitted → Next applies the dynamic app/opengraph-image.tsx
     },
     twitter: {
       card: 'summary_large_image',
@@ -74,9 +75,8 @@ export function generateEventMetadata(event: RecruitmentEvent): Metadata {
       description,
       url,
       type: 'article',
-      images: event.banner
-        ? [{ url: event.banner, width: 1200, height: 630 }]
-        : [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630 }],
+      // Use the event banner when available; otherwise Next's dynamic OG applies.
+      ...(event.banner ? { images: [{ url: event.banner, width: 1200, height: 630 }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',

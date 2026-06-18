@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, MapPin, Layers, ChevronDown, Check } from 'lucide-react'
 import type { Category, Location } from '@/types'
+import { buildJobsUrl } from '@/lib/seo-urls'
 
 const TYPING_KEYWORDS = [
   'Frontend Developer',
@@ -143,11 +144,9 @@ export function HeroSearch({ locations, categories }: Props) {
 
   function handleSearch(e: FormEvent) {
     e.preventDefault()
-    const params = new URLSearchParams()
-    if (keyword.trim()) params.set('q', keyword.trim())
-    if (location) params.set('location', location)
-    if (category) params.set('category', category)
-    router.push(`/loker${params.toString() ? `?${params.toString()}` : ''}`)
+    // Build the canonical JobStreet-style URL (keyword/category/location → path)
+    // via the single source of truth so the home search matches /loker exactly.
+    router.push(buildJobsUrl({ keyword: keyword.trim(), category, location }))
   }
 
   const locationOptions: DropdownOption[] = locations.map((l) => ({ value: l.slug, label: l.name }))

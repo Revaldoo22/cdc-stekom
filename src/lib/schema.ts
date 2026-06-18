@@ -2,6 +2,25 @@ import type { Job, RecruitmentEvent, Crumb } from '@/types'
 import { SITE_URL } from '@/config/api'
 
 export function jobPostingSchema(job: Job): object {
+  // Google requires a non-empty addressLocality inside jobLocation; when the
+  // location is unknown, fall back to applicantLocationRequirements (country)
+  // instead of emitting an invalid empty Place.
+  const locationField = job.location
+    ? {
+        jobLocation: {
+          '@type': 'Place',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: job.location,
+            addressCountry: 'ID',
+          },
+        },
+      }
+    : {
+        jobLocationType: 'TELECOMMUTE',
+        applicantLocationRequirements: { '@type': 'Country', name: 'Indonesia' },
+      }
+
   return {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
@@ -17,22 +36,24 @@ export function jobPostingSchema(job: Job): object {
       name: job.company,
       ...(job.companyLogo ? { logo: job.companyLogo } : {}),
     },
-    jobLocation: {
-      '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: job.location,
-        addressCountry: 'ID',
-      },
-    },
+    ...locationField,
     employmentType: mapEmploymentType(job.employmentTypeSlug),
     datePosted: job.postedAt,
-    ...(job.expiresAt ? { validThrough: job.expiresAt } : {}),
+    // Google requires validThrough; default to 30 days after posting when absent.
+    validThrough: job.expiresAt ?? defaultValidThrough(job.postedAt),
     ...(job.salary ? { baseSalary: parseSalary(job.salary) } : {}),
     directApply: true,
     url: `${SITE_URL}/job/${job.slug}`,
-    skills: job.skills.join(', '),
+    ...(job.skills.length ? { skills: job.skills.join(', ') } : {}),
   }
+}
+
+// JobPosting without validThrough triggers a Google warning; jobs from the CDC
+// API have no expiry, so assume a 30-day window from the posting date.
+function defaultValidThrough(postedAt: string): string {
+  const d = new Date(postedAt)
+  d.setDate(d.getDate() + 30)
+  return d.toISOString().slice(0, 10)
 }
 
 function mapEmploymentType(slug: string): string {
