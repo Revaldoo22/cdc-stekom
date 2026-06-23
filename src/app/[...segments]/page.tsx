@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { JsonLd } from '@/components/shared/JsonLd'
@@ -135,7 +136,6 @@ function buildFaqs(label: string, total: number): { q: string; a: string }[] {
 
 export default async function TaxonomyPage({ params, searchParams }: PageProps) {
   const { segments } = await params
-  const sp = await searchParams
   const parsed = parseJobsSegments(segments)
 
   const [categories, locations, tipeKerja] = await Promise.all([
@@ -143,6 +143,53 @@ export default async function TaxonomyPage({ params, searchParams }: PageProps) 
   ])
   const r = resolve(parsed, categories, locations, tipeKerja)
   if (!r) notFound()
+
+  const label = buildLabel(r)
+  const canonicalPath = buildJobsUrl({ keyword: r.keyword, category: r.category, location: r.location, tipe: r.tipe })
+
+  return (
+    <>
+      <JsonLd
+        schema={breadcrumbSchema([
+          { label: 'Beranda', href: '/' },
+          { label: 'Lowongan Kerja', href: '/loker' },
+          { label, href: canonicalPath },
+        ])}
+      />
+
+      {/* searchParams access is isolated here so the outer shell can prerender;
+          without this <Suspense> boundary Next.js throws DYNAMIC_SERVER_USAGE. */}
+      <Suspense fallback={<div className="flex items-center justify-center h-64 text-brand-muted text-sm">Memuat lowongan...</div>}>
+        <ListingContent
+          searchParams={searchParams}
+          r={r}
+          categories={categories}
+          locations={locations}
+          tipeKerja={tipeKerja}
+          label={label}
+          canonicalPath={canonicalPath}
+        />
+      </Suspense>
+    </>
+  )
+}
+
+// ─── Dynamic part — reads searchParams + fetches jobs ────────────────────────────
+
+interface ListingContentProps {
+  searchParams: Promise<Record<string, string>>
+  r: Resolved
+  categories: Category[]
+  locations: Location[]
+  tipeKerja: TipeKerja[]
+  label: string
+  canonicalPath: string
+}
+
+async function ListingContent({
+  searchParams, r, categories, locations, tipeKerja, label, canonicalPath,
+}: ListingContentProps) {
+  const sp = await searchParams
 
   const page       = Number(sp.page ?? 1)
   const salary     = sp.salary ?? ''
@@ -158,20 +205,11 @@ export default async function TaxonomyPage({ params, searchParams }: PageProps) 
     fetchJobById(jobId),
   ])
 
-  const label = buildLabel(r)
-  const canonicalPath = buildJobsUrl({ keyword: r.keyword, category: r.category, location: r.location, tipe: r.tipe })
   const pageUrl = `${SITE_URL}${canonicalPath}`
   const faqs = buildFaqs(label, total)
 
   return (
     <>
-      <JsonLd
-        schema={breadcrumbSchema([
-          { label: 'Beranda', href: '/' },
-          { label: 'Lowongan Kerja', href: '/loker' },
-          { label, href: canonicalPath },
-        ])}
-      />
       {jobs.length > 0 && <JsonLd schema={itemListSchema(jobs, pageUrl)} />}
       <JsonLd schema={faqPageSchema(faqs)} />
 
