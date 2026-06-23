@@ -16,7 +16,12 @@ import {
 } from '@/services/jobs.service'
 import type { Category, Location, TipeKerja } from '@/types'
 
-export const revalidate = 3600
+// This route depends on searchParams (page, salary, experience, jobId), so it
+// cannot be statically prerendered. Exporting `revalidate` + `generateStaticParams`
+// made Next.js attempt ISR/static generation and then hit searchParams at runtime,
+// throwing DYNAMIC_SERVER_USAGE (HTTP 500) on Vercel. Force dynamic instead — the
+// page is still fully SSR'd with correct metadata for SEO.
+export const dynamic = 'force-dynamic'
 
 // ─── Resolve a parsed filter against real taxonomy data ─────────────────────────
 
@@ -54,38 +59,6 @@ function resolve(
 function buildLabel(r: Resolved): string {
   const kw = r.keyword ? `"${r.keyword}"` : ''
   return [r.tipeName, kw, r.catName, r.locName && `di ${r.locName}`].filter(Boolean).join(' ') || 'Lowongan Kerja'
-}
-
-// ─── Static params (common single-dimension + category×location pages) ──────────
-
-export async function generateStaticParams() {
-  const [categories, locations, tipeKerja, { jobs: allJobs }] = await Promise.all([
-    fetchCategories(), fetchLocations(), fetchTipeKerja(), fetchJobs({ perPage: 500 }),
-  ])
-
-  const now = new Date()
-  const active = allJobs.filter((j) => !j.expiresAt || new Date(j.expiresAt) > now)
-  const params: { segments: string[] }[] = []
-  const seg = (url: string) => url.replace(/^\//, '').split('?')[0].split('/')
-
-  for (const c of categories) {
-    if (active.some((j) => j.categorySlug === c.slug)) params.push({ segments: seg(buildJobsUrl({ category: c.slug })) })
-  }
-  for (const l of locations) {
-    if (active.some((j) => j.locationSlug === l.slug)) params.push({ segments: seg(buildJobsUrl({ location: l.slug })) })
-  }
-  for (const t of tipeKerja) {
-    if (active.some((j) => j.employmentTypeSlug === t.slug)) params.push({ segments: seg(buildJobsUrl({ tipe: t.slug })) })
-  }
-  for (const c of categories) {
-    for (const l of locations) {
-      if (active.some((j) => j.categorySlug === c.slug && j.locationSlug === l.slug)) {
-        params.push({ segments: seg(buildJobsUrl({ category: c.slug, location: l.slug })) })
-      }
-    }
-  }
-
-  return params
 }
 
 // ─── Metadata ────────────────────────────────────────────────────────────────
