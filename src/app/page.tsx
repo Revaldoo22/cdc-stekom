@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  ArrowRight, Briefcase, CalendarDays, Clock, MapPin,
-  Coins, ShieldCheck, Zap, Video,
+  ArrowRight, CalendarDays, Clock, MapPin,
+  CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,43 +24,15 @@ const QUICK_FILTERS = [
   { label: 'Freelance', href: seoUrl.employmentType('freelance') },
 ]
 
-const VALUES = [
-  {
-    icon: Coins,
-    title: 'Gratis Selamanya',
-    desc: 'Tidak ada biaya pendaftaran. Semua fitur tersedia gratis untuk semua pencari kerja.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Perusahaan Terverifikasi',
-    desc: 'Semua lowongan berasal dari perusahaan terverifikasi yang telah bermitra dengan Universitas STEKOM.',
-  },
-  {
-    icon: Zap,
-    title: 'Rekrutmen Cepat',
-    desc: 'Lamar langsung tanpa perantara. Terhubung langsung dengan HRD perusahaan pilihan.',
-  },
-]
-
-const TESTIMONIALS = [
-  {
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&h=96&fit=crop&q=80',
-    name: 'Sari Dewi',
-    role: 'Frontend Developer @ Tokopedia',
-    quote: 'Berkat CDC Universitas Stekom, saya berhasil mendapatkan pekerjaan impian hanya 2 minggu setelah lulus.',
-  },
-  {
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&q=80',
-    name: 'Budi Santoso',
-    role: 'Data Analyst @ Gojek',
-    quote: 'Event VJF mempertemukan saya langsung dengan HRD. Prosesnya cepat dan sangat profesional.',
-  },
-  {
-    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&q=80',
-    name: 'Rina Kusuma',
-    role: 'Digital Marketing @ Shopee',
-    quote: 'Platform ini gratis dan semua lowongannya terverifikasi. Saya sangat merekomendasikan untuk semua pencari kerja.',
-  },
+const PERKS = [
+  'Setiap hari mendapat premium akses ke 1.000 lowongan kerja terbaru',
+  'Relasi perusahaan super banyak, lebih dari 500.000 perusahaan se-Indonesia',
+  'Setiap hari ada Live TikTok lowongan kerja dan tips karir',
+  'Setiap minggu ada rekrutmen offline dari perusahaan besar',
+  'Setiap minggu ada Pelatihan HRD, pengembangan skill kerja dan kesiapan karir',
+  'Setiap bulan rutin ada JOBFAIR Nasional bersama perusahaan ternama',
+  'Seluruh mahasiswa berbudaya bisa kuliah sambil bekerja, bisa kerja sambil kuliah',
+  'Lulus sudah punya pengalaman kerja, bukan hanya ijazah saja',
 ]
 
 export default async function HomePage() {
@@ -289,10 +261,11 @@ export default async function HomePage() {
               {/* Right image */}
               <div className="hidden sm:block w-[42%] relative shrink-0">
                 <Image
-                  src="https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?auto=format&fit=crop&w=600&q=80"
-                  alt="Virtual Job Fair — interview online"
+                  src="/images/event-vjf.webp"
+                  alt="Virtual Job Fair: sesi rekrutmen online via Zoom"
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 640px) 0px, 42vw"
+                  className="object-cover object-left"
                 />
                 {/* dark-to-transparent overlay so text stays readable at small widths */}
                 <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-primary to-transparent" />
@@ -324,10 +297,11 @@ export default async function HomePage() {
               {/* Right image */}
               <div className="hidden sm:block w-[42%] relative shrink-0">
                 <Image
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80"
-                  alt="Rekrutmen Offline — interview tatap muka"
+                  src="/images/event-offline.webp"
+                  alt="Rekrutmen Offline: peserta dan panitia di aula seleksi"
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 640px) 0px, 42vw"
+                  className="object-cover object-[center_100%]"
                 />
                 <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-brand-bg to-transparent" />
               </div>
@@ -337,49 +311,72 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Testimoni Alumni ── */}
-      <section className="bg-brand-bg border-y border-border">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-brand-text text-center mb-2">Alumni yang Berhasil</h2>
-          <p className="text-center text-sm text-brand-muted mb-10">Mereka menemukan karir impian melalui CDC Universitas Stekom</p>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map(({ photo, name, role, quote }) => (
-              <div key={name} className="rounded-xl border border-border bg-white p-6 flex flex-col gap-4">
-                <p className="text-sm text-brand-muted leading-relaxed italic flex-1">
-                  &ldquo;{quote}&rdquo;
-                </p>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={photo}
-                    alt={name}
-                    width={48}
-                    height={48}
-                    className="rounded-full object-cover w-12 h-12 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-brand-text truncate">{name}</p>
-                    <p className="text-xs text-brand-muted truncate">{role}</p>
-                  </div>
-                </div>
+      {/* ── Banner Eksklusif Penunjang Karir & Usaha ── */}
+      <section className="relative overflow-hidden bg-primary text-white">
+        {/* decorative glows */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Eksklusif Penunjang <span className="text-orange-300">Karir dan Usaha</span>
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-white/85 sm:text-base">
+              Kuliah di Universitas STEKOM bukan sekadar belajar. Ini semua yang kamu
+              dapatkan sebagai mahasiswa untuk siap kerja dan berkarir.
+            </p>
+          </div>
+
+          {/* stat strip */}
+          <dl className="mx-auto mt-10 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-2xl bg-white/10 py-5 backdrop-blur ring-1 ring-white/15">
+            {[
+              { value: '1.000+', label: 'Lowongan / hari' },
+              { value: '500K+', label: 'Perusahaan mitra' },
+              { value: 'Nasional', label: 'Jobfair tiap bulan' },
+            ].map(({ value, label }) => (
+              <div key={label} className="px-2 text-center">
+                <dt className="text-xl font-extrabold sm:text-2xl">{value}</dt>
+                <dd className="mt-1 text-[11px] uppercase tracking-wide text-white/70 sm:text-xs">{label}</dd>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
+          </dl>
 
-      {/* ── Kenapa CDC Universitas Stekom ── */}
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-brand-text text-center mb-10">Kenapa CDC Universitas Stekom?</h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {VALUES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex flex-col items-center text-center rounded-xl border border-border bg-background p-6">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
-                <Icon className="h-7 w-7 text-primary" aria-hidden="true" />
-              </span>
-              <h3 className="text-base font-semibold text-brand-text mb-2">{title}</h3>
-              <p className="text-sm text-brand-muted leading-relaxed">{desc}</p>
+          <ul className="mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-x-8 gap-y-2 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-4">
+            {PERKS.map((text) => (
+              <li
+                key={text}
+                className="flex items-start gap-3 rounded-xl p-3 transition-colors duration-200 hover:bg-white/10"
+              >
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-300" aria-hidden="true" />
+                <span className="text-sm leading-relaxed text-white/90 sm:text-base">{text}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-12 flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                render={<Link href="https://kew.stekom.ac.id/?utm_source=cdc&utm_medium=banner&utm_campaign=daftar_kuliah" target="_blank" rel="noopener noreferrer" />}
+                className="group cursor-pointer bg-white px-8 font-bold text-primary shadow-xl transition-colors duration-200 hover:bg-orange-50"
+              >
+                Daftar Kuliah Sekarang
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                render={<Link href="https://toploker.com/login_perusahaan?utm_source=cdc&utm_medium=banner&utm_campaign=pasang_loker" target="_blank" rel="noopener noreferrer" />}
+                className="cursor-pointer border-white/40 bg-transparent px-8 font-semibold text-white hover:bg-white/10 hover:text-white"
+              >
+                Untuk Perusahaan
+              </Button>
             </div>
-          ))}
+            <p className="text-xs text-white/70">Kuliah sambil kerja, lulus langsung siap berkarir</p>
+          </div>
         </div>
       </section>
     </>
