@@ -1,6 +1,7 @@
 import { cache } from 'react'
-import { CDC_API_BASE, CDC_KODE, LOKER_CURSOR, REVALIDATE_JOBS, REVALIDATE_CATEGORIES } from '@/config/api'
+import { CDC_API_BASE, CDC_KODE, CDC_LOKER_ENDPOINT, LOKER_CURSOR, REVALIDATE_JOBS, REVALIDATE_CATEGORIES } from '@/config/api'
 import { slugifyKeyword } from '@/lib/seo-urls'
+import { PROVINSI, KABUPATEN } from '@/data/wilayah'
 import type { Job, Category } from '@/types'
 
 // ─── Raw API shapes ─────────────────────────────────────────────────────────────
@@ -21,6 +22,10 @@ interface RawLoker {
   hardskill: string
   id_prov: string
   id_kab: string
+  // Newer datalokercdc fields (may be absent on older rows)
+  jenis_kerja?: string
+  gaji?: string
+  deskripsi?: string
 }
 
 interface RawKategori {
@@ -96,12 +101,117 @@ const getCategoryMap = cache(async (): Promise<Map<string, { name: string; slug:
 
 // ─── Map a raw loker → Job ───────────────────────────────────────────────────────
 
+// The API runs addslashes() + htmlentities() on text fields — sometimes more
+// than once, producing "&amp;amp;amp;". Reverse both, decoding entities
+// repeatedly until the string stops changing.
+function decodeEntitiesOnce(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&') // do & last so it doesn't re-expand the others
+}
+
+function clean(v?: string): string {
+  if (!v) return ''
+  let s = v.replace(/\\(.)/g, '$1')
+  for (let i = 0; i < 5; i++) {
+    const next = decodeEntitiesOnce(s)
+    if (next === s) break
+    s = next
+  }
+  return s.trim()
+}
+
+// The deskripsi field contains light Markdown (**bold**, *italic*, blank-line
+// paragraphs, - bullet lists). The detail page renders description as HTML via
+// dangerouslySetInnerHTML, so convert here. Escape first to stay XSS-safe, then
+// apply a small, fixed set of formatting rules.
+function mdToHtml(md: string): string {
+  const esc = md
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  const lines = esc.split(/\r?\n/)
+  const html: string[] = []
+  let para: string[] = []
+  let inList = false
+
+  const inline = (s: string) =>
+    s
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+
+  const flushPara = () => {
+    if (para.length) {
+      html.push(`<p>${inline(para.join(' '))}</p>`)
+      para = []
+    }
+  }
+  const closeList = () => {
+    if (inList) {
+      html.push('</ul>')
+      inList = false
+    }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      flushPara()
+      closeList()
+      continue
+    }
+    const bullet = line.match(/^[-*•]\s+(.*)$/)
+    if (bullet) {
+      flushPara()
+      if (!inList) {
+        html.push('<ul>')
+        inList = true
+      }
+      html.push(`<li>${inline(bullet[1])}</li>`)
+    } else {
+      closeList()
+      para.push(line)
+    }
+  }
+  flushPara()
+  closeList()
+  return html.join('')
+}
+
+// Gaji comes as a raw number string ("2000000") or free text. Format pure
+// numbers as Rupiah; pass through anything that already has non-digit text.
+function formatGaji(v?: string): string | undefined {
+  const g = clean(v)
+  if (!g) return undefined
+  const digits = g.replace(/[.\s]/g, '')
+  if (/^\d+$/.test(digits)) {
+    return `Rp ${Number(digits).toLocaleString('id-ID')}`
+  }
+  return g
+}
+
 function toSkills(soft: string, hard: string): string[] {
   return [soft, hard]
     .filter(Boolean)
     .flatMap((s) => s.split(','))
     .map((s) => s.trim())
     .filter(Boolean)
+}
+
+// Resolve id_prov / id_kab codes to a display name using the bundled region
+// tables. Prefer "Kabupaten, Provinsi"; fall back to whichever resolves.
+function resolveLocation(idProv: string, idKab: string): { name: string; slug: string } {
+  const kab = KABUPATEN[idKab]
+  const provName = PROVINSI[idProv] ?? (kab ? PROVINSI[kab.prov] : undefined)
+  const name = kab ? (provName ? `${kab.name}, ${provName}` : kab.name) : (provName ?? '')
+  // Slug keyed on regency when available, else province — used for /lokasi pages.
+  const slugSource = kab?.name ?? provName ?? ''
+  return { name, slug: slugSource ? slugifyKeyword(slugSource) : '' }
 }
 
 function applyUrlFrom(raw: RawLoker): string | undefined {
@@ -114,24 +224,27 @@ function applyUrlFrom(raw: RawLoker): string | undefined {
 }
 
 function mapLoker(raw: RawLoker, cat?: { name: string; slug: string }): Job {
-  const slugBase = slugifyKeyword(raw.posisi) || 'loker'
+  const posisi = clean(raw.posisi)
+  const slugBase = slugifyKeyword(posisi) || 'loker'
+  const jenisKerja = clean(raw.jenis_kerja)
+  const gaji = formatGaji(raw.gaji)
+  const deskripsi = clean(raw.deskripsi)
+  const loc = resolveLocation(raw.id_prov, raw.id_kab)
   return {
     id: raw.id_loker,
     slug: `${slugBase}-${raw.id_loker}`,
-    title: raw.posisi.trim(),
-    company: raw.nama_perusahaan.trim(),
+    title: posisi,
+    company: clean(raw.nama_perusahaan),
     // Logo intentionally omitted — the UI shows a building icon instead.
-    // Location names are not exposed by the API (only id_prov/id_kab codes),
-    // so leave location blank rather than show a meaningless number.
-    location: '',
-    locationSlug: '',
+    // Location resolved from id_prov/id_kab via the bundled region tables.
+    location: loc.name,
+    locationSlug: loc.slug,
     category: cat?.name ?? 'Lainnya',
     categorySlug: cat?.slug ?? 'lainnya',
-    // js_loker is a numeric code with no name endpoint → omit employment type.
-    employmentType: '',
-    employmentTypeSlug: '',
-    // No salary / requirements / experience fields in the API → placeholder.
-    description: DESC_PLACEHOLDER,
+    employmentType: jenisKerja,
+    employmentTypeSlug: jenisKerja ? slugifyKeyword(jenisKerja) : '',
+    salary: gaji,
+    description: deskripsi ? mdToHtml(deskripsi) : `<p>${DESC_PLACEHOLDER}</p>`,
     requirements: [],
     skills: toSkills(raw.softskill, raw.hardskill),
     applyUrl: applyUrlFrom(raw),
@@ -143,7 +256,13 @@ function mapLoker(raw: RawLoker, cat?: { name: string; slug: string }): Job {
 
 export const getCdcJobs = cache(async (): Promise<Job[]> => {
   const [data, catMap] = await Promise.all([
-    postForm<{ dx: RawLoker[] }>('dataloker', { idloker: String(LOKER_CURSOR), kode: CDC_KODE }, REVALIDATE_JOBS, { dx: [] }),
+    postForm<{ dx: RawLoker[] }>(
+      CDC_LOKER_ENDPOINT,
+      // deskripsi=ada → only listings that have a real description (rich + small).
+      { idloker: String(LOKER_CURSOR), kode: CDC_KODE, id_prov: '', id_kab: '', deskripsi: 'ada' },
+      REVALIDATE_JOBS,
+      { dx: [] },
+    ),
     getCategoryMap(),
   ])
   return data.dx

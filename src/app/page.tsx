@@ -357,24 +357,14 @@ export default async function HomePage() {
           </ul>
 
           <div className="mt-12 flex flex-col items-center gap-3">
-            <div className="flex flex-col items-center gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                render={<Link href="https://kew.stekom.ac.id/?utm_source=cdc&utm_medium=banner&utm_campaign=daftar_kuliah" target="_blank" rel="noopener noreferrer" />}
-                className="group cursor-pointer bg-white px-8 font-bold text-primary shadow-xl transition-colors duration-200 hover:bg-orange-50"
-              >
-                Daftar Kuliah Sekarang
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                render={<Link href="https://toploker.com/login_perusahaan?utm_source=cdc&utm_medium=banner&utm_campaign=pasang_loker" target="_blank" rel="noopener noreferrer" />}
-                className="cursor-pointer border-white/40 bg-transparent px-8 font-semibold text-white hover:bg-white/10 hover:text-white"
-              >
-                Untuk Perusahaan
-              </Button>
-            </div>
+            <Button
+              size="lg"
+              render={<Link href="https://kew.stekom.ac.id/?utm_source=cdc&utm_medium=banner&utm_campaign=daftar_kuliah" target="_blank" rel="noopener noreferrer" />}
+              className="group cursor-pointer bg-white px-8 font-bold text-primary shadow-xl transition-colors duration-200 hover:bg-orange-50"
+            >
+              Daftar Kuliah Sekarang
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
+            </Button>
             <p className="text-xs text-white/70">Kuliah sambil kerja, lulus langsung siap berkarir</p>
           </div>
         </div>

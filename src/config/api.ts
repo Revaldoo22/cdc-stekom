@@ -15,6 +15,10 @@ export const RELATED_JOBS_COUNT = 5
 // thousands of rows and crashes the server, so we keep the cursor high to pull
 // only a recent batch. Bump LOKER_CURSOR down to widen the window.
 export const CDC_API_BASE = 'https://cdc.stekom.ac.id/curl_loker'
+// Loker list endpoint. `datalokercdc` returns jenis_kerja, gaji, deskripsi and
+// supports a `deskripsi=ada` filter that returns only listings with a real
+// description (small, rich result set). That's our source of truth.
+export const CDC_LOKER_ENDPOINT = process.env.CDC_LOKER_ENDPOINT ?? 'datalokercdc'
 export const CDC_KODE = process.env.CDC_LOKER_KODE ?? 'klashdioasfiosabiobhioobd873546769743663769736463769'
 export const LOKER_CURSOR = Number(process.env.CDC_LOKER_CURSOR ?? 1812879) // ~60 most-recent jobs
 

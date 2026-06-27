@@ -96,14 +96,33 @@ export async function fetchCategories(): Promise<Category[]> {
     .sort((a, b) => b.count - a.count)
 }
 
+// Build a {slug,name,count} list from whatever values the current job batch
+// actually has — keeps dropdowns in sync with real data, biggest first.
+function deriveFacet(jobs: Job[], slugOf: (j: Job) => string, nameOf: (j: Job) => string) {
+  const map = new Map<string, { name: string; count: number }>()
+  for (const j of jobs) {
+    const slug = slugOf(j)
+    const name = nameOf(j)
+    if (!slug || !name) continue
+    const e = map.get(slug)
+    if (e) e.count++
+    else map.set(slug, { name, count: 1 })
+  }
+  return [...map.entries()]
+    .map(([slug, { name, count }]) => ({ slug, name, count }))
+    .sort((a, b) => b.count - a.count)
+}
+
 export async function fetchLocations(): Promise<Location[]> {
   if (USE_MOCK) return mockLocations
-  return [] // API exposes only numeric region codes (no names) — no location filter for now
+  const jobs = await getCdcJobs()
+  return deriveFacet(jobs, (j) => j.locationSlug, (j) => j.location)
 }
 
 export async function fetchTipeKerja(): Promise<TipeKerja[]> {
   if (USE_MOCK) return mockTipeKerja
-  return [] // js_loker is a numeric code with no name endpoint — no work-type filter for now
+  const jobs = await getCdcJobs()
+  return deriveFacet(jobs, (j) => j.employmentTypeSlug, (j) => j.employmentType)
 }
 
 export async function fetchRelatedJobs(job: Job, limit = 5): Promise<Job[]> {

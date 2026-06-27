@@ -552,19 +552,19 @@ export function JobListingClient({
 
   const activeCount = [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience].filter(Boolean).length
 
-  // Filter bar: search row ~68px + pills row ~52px = ~120px. Navbar = 64px. Total = 184px.
-  const stickyTop    = 'top-[184px]'
-  const stickyHeight = 'h-[calc(100vh-184px)]'
+  // Filter bar: search row ~78px + pills row ~62px = ~140px. Navbar = 64px. Total = 204px.
+  const stickyTop    = 'top-[204px]'
+  const stickyHeight = 'h-[calc(100vh-204px)]'
 
   return (
     <div>
 
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-16 z-20 bg-gradient-to-b from-[#0B2C48] to-[#0A2540] shadow-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
 
           {/* Search row */}
-          <form onSubmit={handleSearch} className="flex gap-2.5 pt-4 pb-3">
+          <form onSubmit={handleSearch} className="flex gap-2.5 pt-6 pb-4">
             <div className="group flex flex-1 items-center rounded-xl bg-white ring-1 ring-white/10 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:shadow-[0_4px_20px_-4px_rgba(29,78,216,0.5)]">
               <span className="pl-4 pr-1 text-slate-400">
                 <Search className="h-[18px] w-[18px]" aria-hidden />
@@ -598,7 +598,7 @@ export function JobListingClient({
           </form>
 
           {/* Filter pills row */}
-          <div className="flex items-center gap-2.5 pb-4">
+          <div className="flex items-center gap-2.5 pb-6">
             <span className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold uppercase tracking-wide text-white/45">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
               Filter
