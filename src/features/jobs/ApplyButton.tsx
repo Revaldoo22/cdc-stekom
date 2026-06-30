@@ -22,7 +22,9 @@ interface ApplyButtonProps {
 export function ApplyButton({ job, disabled = false, className }: ApplyButtonProps) {
   const [open, setOpen] = useState(false)
 
-  if (job.applyUrl) {
+  // Non-WhatsApp apply links (company website) keep the old direct-link behaviour.
+  const isWhatsApp = job.applyUrl?.includes('wa.me') ?? false
+  if (job.applyUrl && !isWhatsApp) {
     return (
       <Button
         render={<a href={job.applyUrl} target="_blank" rel="noopener noreferrer" />}
@@ -57,7 +59,9 @@ export function ApplyButton({ job, disabled = false, className }: ApplyButtonPro
           <JobApplicationForm
             jobId={job.id}
             jobTitle={job.title}
-            onSuccess={() => setTimeout(() => setOpen(false), 2000)}
+            company={job.company}
+            whatsappUrl={isWhatsApp ? job.applyUrl : undefined}
+            onSuccess={() => setTimeout(() => setOpen(false), 3000)}
           />
         </DialogContent>
       </Dialog>

@@ -14,11 +14,16 @@ import { submitForm } from '@/services/forms.service'
 interface JobApplicationFormProps {
   jobId: string
   jobTitle: string
+  company?: string
+  // If the job's apply contact is a WhatsApp link, pass it here. After the form
+  // is submitted we open WhatsApp prefilled with the applicant's details.
+  whatsappUrl?: string
   onSuccess?: () => void
 }
 
-export function JobApplicationForm({ jobId, jobTitle, onSuccess }: JobApplicationFormProps) {
+export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, onSuccess }: JobApplicationFormProps) {
   const [success, setSuccess] = useState(false)
+  const [waLink, setWaLink] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -40,6 +45,23 @@ export function JobApplicationForm({ jobId, jobTitle, onSuccess }: JobApplicatio
         message: data.message ?? '',
       },
     })
+    // If the company accepts applications via WhatsApp, open it prefilled.
+    if (whatsappUrl) {
+      const lines = [
+        `Halo, saya ${data.name} ingin melamar posisi ${jobTitle}${company ? ` di ${company}` : ''}.`,
+        '',
+        `Nama: ${data.name}`,
+        `Telepon: ${data.phone}`,
+        `Email: ${data.email}`,
+      ]
+      if (data.cvLink) lines.push(`Link CV: ${data.cvLink}`)
+      if (data.message) lines.push('', `Pesan: ${data.message}`)
+      const base = whatsappUrl.split('?')[0]
+      const link = `${base}?text=${encodeURIComponent(lines.join('\n'))}`
+      setWaLink(link)
+      window.open(link, '_blank', 'noopener,noreferrer')
+    }
+
     setSuccess(true)
     onSuccess?.()
   }
@@ -49,9 +71,23 @@ export function JobApplicationForm({ jobId, jobTitle, onSuccess }: JobApplicatio
       <div className="flex flex-col items-center gap-3 py-8 text-center">
         <CheckCircle2 className="h-12 w-12 text-cta" aria-hidden="true" />
         <h3 className="text-lg font-semibold text-brand-text">Lamaran Terkirim!</h3>
-        <p className="text-sm text-brand-muted">
-          Lamaran Anda untuk posisi <strong>{jobTitle}</strong> telah diterima. Tim rekrutmen akan menghubungi Anda.
-        </p>
+        {waLink ? (
+          <>
+            <p className="text-sm text-brand-muted">
+              Lanjutkan ke WhatsApp perusahaan untuk mengirim lamaran <strong>{jobTitle}</strong>.
+            </p>
+            <Button
+              render={<a href={waLink} target="_blank" rel="noopener noreferrer" />}
+              className="mt-1 w-full cursor-pointer bg-cta hover:bg-cta-dark text-white"
+            >
+              Lanjut ke WhatsApp
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm text-brand-muted">
+            Lamaran Anda untuk posisi <strong>{jobTitle}</strong> telah diterima. Tim rekrutmen akan menghubungi Anda.
+          </p>
+        )}
       </div>
     )
   }
