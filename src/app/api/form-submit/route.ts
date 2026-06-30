@@ -6,6 +6,7 @@ import { JobApplicationSchema, VJFRegistrationSchema, OfflineRecruitmentSchema }
 const RequestSchema = z.object({
   formType: z.enum(['job-application', 'vjf', 'offline']),
   data: z.record(z.string(), z.string()),
+  utm: z.record(z.string(), z.string()).optional(),
 })
 
 const SCHEMA_MAP = {
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { formType, data } = parsed.data
+    const { formType, data, utm } = parsed.data
     const schema = SCHEMA_MAP[formType]
     const validated = schema.safeParse(data)
 
@@ -37,16 +38,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const sheetPayload = { formType, ...validated.data, ...(utm ?? {}) }
+
     if (!GOOGLE_SHEET_WEBHOOK) {
       // Dev fallback — log to console, return success
-      console.log('[form-submit] Google Sheets webhook not configured. Received:', { formType, data })
+      console.log('[form-submit] Google Sheets webhook not configured. Received:', sheetPayload)
       return NextResponse.json({ success: true, dev: true })
     }
 
     const sheetRes = await fetch(GOOGLE_SHEET_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ formType, ...validated.data }),
+      body: JSON.stringify(sheetPayload),
     })
 
     if (!sheetRes.ok) {

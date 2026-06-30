@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import {
   MapPin, Briefcase, Clock, BadgeDollarSign,
   ExternalLink, CheckCircle2, Wrench, Calendar,
-  Building2, CalendarClock,
+  Building2, CalendarClock, GraduationCap, Accessibility,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -136,6 +136,12 @@ export default async function JobDetailPage({ params }: PageProps) {
                       {job.salary}
                     </span>
                   )}
+                  {job.education && (
+                    <span className="flex items-center gap-1.5">
+                      <GraduationCap className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      {job.education}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                     Diposting {new Date(job.postedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -148,6 +154,12 @@ export default async function JobDetailPage({ params }: PageProps) {
                     <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                     {job.employmentType}
                   </span>
+                  {job.disabilityFriendly && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cta/30 bg-cta/10 px-3 py-1 text-xs font-semibold text-cta">
+                      <Accessibility className="h-3.5 w-3.5" aria-hidden="true" />
+                      Ramah Disabilitas
+                    </span>
+                  )}
                   {job.expiresAt && !isExpired && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-brand-muted">
                       <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />

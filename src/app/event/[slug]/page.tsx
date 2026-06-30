@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { CalendarDays, MapPin, Clock, Users, Building2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -58,7 +59,6 @@ export default async function EventDetailPage({ params }: PageProps) {
             {event.type === 'vjf' ? 'Virtual Job Fair' : 'Rekrutmen Offline'}
           </Badge>
           <h1 className="mt-2 text-3xl font-bold text-brand-text sm:text-4xl">{event.title}</h1>
-          <p className="mt-3 text-brand-muted max-w-2xl">{event.description}</p>
 
           <div className="mt-5 flex flex-wrap gap-4 text-sm text-brand-muted">
             <span className="flex items-center gap-1.5">
@@ -94,6 +94,27 @@ export default async function EventDetailPage({ params }: PageProps) {
         <div className="flex flex-col gap-10 lg:flex-row">
           {/* Jobs */}
           <div className="flex-1 min-w-0">
+            {event.banner && (
+              <div className="relative mb-8 aspect-4/3 w-full overflow-hidden rounded-xl border border-border bg-muted sm:aspect-video">
+                <Image
+                  src={event.banner}
+                  alt={`Poster ${event.title}`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="object-contain"
+                />
+              </div>
+            )}
+
+            {event.description && (
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-brand-text mb-3">Tentang Event</h2>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-brand-muted">
+                  {event.description}
+                </p>
+              </div>
+            )}
+
             {event.jobs && event.jobs.length > 0 && (
               <>
                 <h2 className="text-xl font-bold text-brand-text mb-5 flex items-center gap-2">

@@ -1,14 +1,27 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import { VJFRegistrationSchema, type VJFRegistrationData } from '@/lib/validators'
 import { submitForm } from '@/services/forms.service'
+
+// Capture utm_* params from the current URL so they can be sent to the sheet.
+function getUtmParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  const out: Record<string, string> = {}
+  new URLSearchParams(window.location.search).forEach((value, key) => {
+    if (key.startsWith('utm_')) out[key] = value
+  })
+  return out
+}
 
 interface VJFRegistrationFormProps {
   eventId: string
@@ -17,8 +30,10 @@ interface VJFRegistrationFormProps {
 
 export function VJFRegistrationForm({ eventId, eventTitle }: VJFRegistrationFormProps) {
   const [success, setSuccess] = useState(false)
+  const [submittedName, setSubmittedName] = useState('')
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<VJFRegistrationData>({
@@ -33,21 +48,36 @@ export function VJFRegistrationForm({ eventId, eventTitle }: VJFRegistrationForm
         name: data.name,
         email: data.email,
         phone: data.phone,
-        universityOrCompany: data.universityOrCompany,
+        interestedKuliahKerja: data.interestedKuliahKerja,
         eventId: data.eventId,
       },
+      utm: getUtmParams(),
     })
+    setSubmittedName(data.name)
     setSuccess(true)
+
+    // Arahkan ke WhatsApp admin dengan pesan terisi nama pendaftar.
+    const text = `Halo, saya ${data.name}. Mohon bantuan untuk pendaftaran ${eventTitle}.`
+    const waUrl = `https://wa.me/6283896508234?text=${encodeURIComponent(text)}`
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (success) {
+    const text = `Halo, saya ${submittedName}. Mohon bantuan untuk pendaftaran ${eventTitle}.`
+    const waUrl = `https://wa.me/6283896508234?text=${encodeURIComponent(text)}`
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
         <CheckCircle2 className="h-12 w-12 text-cta" aria-hidden="true" />
         <h3 className="text-lg font-semibold text-brand-text">Pendaftaran Berhasil!</h3>
         <p className="text-sm text-brand-muted">
-          Anda telah terdaftar untuk <strong>{eventTitle}</strong>. Kami akan mengirimkan detail acara ke email Anda.
+          Lanjutkan ke WhatsApp admin untuk konfirmasi pendaftaran <strong>{eventTitle}</strong>.
         </p>
+        <Button
+          render={<a href={waUrl} target="_blank" rel="noopener noreferrer" />}
+          className="mt-2 w-full cursor-pointer bg-cta hover:bg-cta-dark text-white"
+        >
+          Lanjut ke WhatsApp
+        </Button>
       </div>
     )
   }
@@ -95,16 +125,28 @@ export function VJFRegistrationForm({ eventId, eventTitle }: VJFRegistrationForm
       </div>
 
       <div>
-        <Label htmlFor="vjf-institution">Universitas / Perusahaan *</Label>
-        <Input
-          id="vjf-institution"
-          {...register('universityOrCompany')}
-          placeholder="Universitas STEKOM"
-          aria-invalid={!!errors.universityOrCompany}
-          className="mt-1"
+        <Label htmlFor="vjf-kuliahkerja">Tertarik kuliah sambil kerja? *</Label>
+        <Controller
+          control={control}
+          name="interestedKuliahKerja"
+          render={({ field }) => (
+            <Select value={field.value ?? ''} onValueChange={field.onChange}>
+              <SelectTrigger
+                id="vjf-kuliahkerja"
+                className="mt-1 w-full"
+                aria-invalid={!!errors.interestedKuliahKerja}
+              >
+                <SelectValue placeholder="Pilih jawaban" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ya">Ya, tertarik</SelectItem>
+                <SelectItem value="tidak">Tidak</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         />
-        {errors.universityOrCompany && (
-          <p role="alert" className="mt-1 text-xs text-destructive">{errors.universityOrCompany.message}</p>
+        {errors.interestedKuliahKerja && (
+          <p role="alert" className="mt-1 text-xs text-destructive">{errors.interestedKuliahKerja.message}</p>
         )}
       </div>
 

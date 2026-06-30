@@ -202,7 +202,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {locations.map((loc) => (
+            {locations.slice(0, 10).map((loc) => (
               <Link
                 key={loc.slug}
                 href={seoUrl.location(loc.slug)}

@@ -35,7 +35,7 @@ export function JobApplicationForm({ jobId, jobTitle, onSuccess }: JobApplicatio
         name: data.name,
         email: data.email,
         phone: data.phone,
-        cvLink: data.cvLink,
+        cvLink: data.cvLink ?? '',
         jobId: data.jobId,
         message: data.message ?? '',
       },
@@ -114,19 +114,25 @@ export function JobApplicationForm({ jobId, jobTitle, onSuccess }: JobApplicatio
       </div>
 
       <div>
-        <Label htmlFor="app-cv">Link CV / Portfolio *</Label>
+        <Label htmlFor="app-cv">Link CV / Portfolio (opsional)</Label>
         <Input
           id="app-cv"
           type="url"
           {...register('cvLink')}
           placeholder="https://drive.google.com/..."
-          aria-describedby={errors.cvLink ? 'app-cv-error' : undefined}
+          aria-describedby={errors.cvLink ? 'app-cv-error' : 'app-cv-hint'}
           aria-invalid={!!errors.cvLink}
           className="mt-1"
         />
-        {errors.cvLink && (
+        {errors.cvLink ? (
           <p id="app-cv-error" role="alert" className="mt-1 text-xs text-destructive">
             {errors.cvLink.message}
+          </p>
+        ) : (
+          <p id="app-cv-hint" className="mt-1 text-xs text-brand-muted">
+            Tempel link yang bisa diakses publik: Google Drive, Dropbox, OneDrive,
+            LinkedIn, atau portfolio pribadi. Pastikan izin akses &ldquo;siapa saja yang
+            memiliki link&rdquo;.
           </p>
         )}
       </div>

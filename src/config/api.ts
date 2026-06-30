@@ -22,5 +22,10 @@ export const CDC_LOKER_ENDPOINT = process.env.CDC_LOKER_ENDPOINT ?? 'datalokercd
 export const CDC_KODE = process.env.CDC_LOKER_KODE ?? 'klashdioasfiosabiobhioobd873546769743663769736463769'
 export const LOKER_CURSOR = Number(process.env.CDC_LOKER_CURSOR ?? 1812879) // ~60 most-recent jobs
 
+// ─── Virtual Job Fair API (TopLoker) ─────────────────────────────────────────
+// Returns all VJF batches. Note: different host + different key than the loker API.
+export const VJF_API_URL = 'https://toploker.com/curl/virtual_jobfair'
+export const VJF_KEY = process.env.VJF_API_KEY ?? 'klashdioasfiosabiobh231rd873546769743663769736463769'
+
 // Use the real CDC API unless explicitly forced to mock
 export const USE_MOCK = process.env.USE_MOCK === 'true'

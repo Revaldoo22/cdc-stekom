@@ -26,8 +26,14 @@ const TIPE_COLOR: Record<string, string> = {
 
 
 function relativeTime(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000)
-  if (days === 0) return 'Hari ini'
+  // Compare calendar days (date-only), not raw ms, so "YYYY-MM-DD" parsed as UTC
+  // midnight doesn't shift "today" to "yesterday" in WIB.
+  const d = new Date(dateStr)
+  const posted = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+  const now = new Date()
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.floor((today - posted) / 86_400_000)
+  if (days <= 0) return 'Hari ini'
   if (days === 1) return 'Kemarin'
   if (days < 7) return `${days} hari lalu`
   if (days < 30) return `${Math.floor(days / 7)} minggu lalu`

@@ -263,12 +263,18 @@ function JobDetailPanel({ job }: { job: Job }) {
   }, [job.id])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-full overflow-hidden">
 
-      {/* ── Sticky bar — slides in only after original header scrolls out ── */}
-      <div className={`overflow-hidden bg-white border-b border-border/70 transition-all duration-200 ${
-        showSticky ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
-      }`}>
+      {/* ── Sticky bar — overlays the scroll area (absolute) so it never pushes
+           content or interrupts scrolling. Slides down on appear. ── */}
+      <div
+        aria-hidden={!showSticky}
+        className={`absolute inset-x-0 top-0 z-10 bg-white/95 backdrop-blur border-b border-border/70 transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
+          showSticky
+            ? 'translate-y-0 opacity-100'
+            : '-translate-y-full opacity-0 pointer-events-none'
+        }`}
+      >
         <div className="px-5 py-3 flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="font-bold text-[13px] text-brand-text truncate leading-tight">{job.title}</p>
@@ -560,7 +566,7 @@ export function JobListingClient({
     <div>
 
       {/* ── Sticky filter bar ── */}
-      <div className="sticky top-16 z-20 bg-gradient-to-b from-[#0B2C48] to-[#0A2540] shadow-md">
+      <div className="sticky top-16 z-20 bg-primary shadow-md">
         <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
 
           {/* Search row */}
@@ -590,7 +596,7 @@ export function JobListingClient({
             </div>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 text-sm font-semibold text-white hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B2C48]"
+              className="inline-flex items-center gap-2 rounded-xl bg-cta px-7 text-sm font-bold text-white hover:bg-cta-dark active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
             >
               <Search className="h-4 w-4 sm:hidden" aria-hidden />
               <span className="hidden sm:inline">Cari</span>
@@ -630,8 +636,8 @@ export function JobListingClient({
       {/* ── Content ── */}
       <div className="mx-auto flex max-w-7xl">
 
-        {/* Left: job list */}
-        <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen">
+        {/* Left: job list — own scroll column (independent from the detail panel) */}
+        <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
           ) : jobs.length === 0 ? (

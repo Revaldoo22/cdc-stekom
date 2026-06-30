@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { CDC_API_BASE, CDC_KODE, CDC_LOKER_ENDPOINT, LOKER_CURSOR, REVALIDATE_JOBS, REVALIDATE_CATEGORIES } from '@/config/api'
+import { CDC_API_BASE, CDC_KODE, LOKER_CURSOR, REVALIDATE_JOBS, REVALIDATE_CATEGORIES } from '@/config/api'
 import { slugifyKeyword } from '@/lib/seo-urls'
 import { PROVINSI, KABUPATEN } from '@/data/wilayah'
 import type { Job, Category } from '@/types'
@@ -15,6 +15,7 @@ interface RawLoker {
   email: string
   link_web: string
   pendidikan: string
+  disabilitas: string
   img: string
   tanggal: string
   status: string
@@ -122,7 +123,10 @@ function clean(v?: string): string {
     if (next === s) break
     s = next
   }
-  return s.trim()
+  s = s.trim()
+  // Backend sometimes stores the literal string "null"/"undefined" — treat as empty.
+  if (s === 'null' || s === 'undefined') return ''
+  return s
 }
 
 // The deskripsi field contains light Markdown (**bold**, *italic*, blank-line
@@ -199,7 +203,7 @@ function toSkills(soft: string, hard: string): string[] {
   return [soft, hard]
     .filter(Boolean)
     .flatMap((s) => s.split(','))
-    .map((s) => s.trim())
+    .map((s) => clean(s))
     .filter(Boolean)
 }
 
@@ -244,6 +248,8 @@ function mapLoker(raw: RawLoker, cat?: { name: string; slug: string }): Job {
     employmentType: jenisKerja,
     employmentTypeSlug: jenisKerja ? slugifyKeyword(jenisKerja) : '',
     salary: gaji,
+    education: clean(raw.pendidikan) || undefined,
+    disabilityFriendly: raw.disabilitas === '1',
     description: deskripsi ? mdToHtml(deskripsi) : `<p>${DESC_PLACEHOLDER}</p>`,
     requirements: [],
     skills: toSkills(raw.softskill, raw.hardskill),
@@ -255,18 +261,34 @@ function mapLoker(raw: RawLoker, cat?: { name: string; slug: string }): Job {
 // ─── Fetch + map the recent batch (cached per request) ───────────────────────────
 
 export const getCdcJobs = cache(async (): Promise<Job[]> => {
-  const [data, catMap] = await Promise.all([
+  // Two sources, merged:
+  //  • dataloker (cursor)        → the bulk of recent listings (no gaji/deskripsi)
+  //  • datalokercdc deskripsi=ada → the rich subset (description, gaji, jenis_kerja)
+  // Rich rows win on id collision, so a listing shows full detail when available.
+  const [bulk, rich, catMap] = await Promise.all([
     postForm<{ dx: RawLoker[] }>(
-      CDC_LOKER_ENDPOINT,
-      // deskripsi=ada → only listings that have a real description (rich + small).
-      { idloker: String(LOKER_CURSOR), kode: CDC_KODE, id_prov: '', id_kab: '', deskripsi: 'ada' },
+      'dataloker',
+      { idloker: String(LOKER_CURSOR), kode: CDC_KODE },
+      REVALIDATE_JOBS,
+      { dx: [] },
+    ),
+    postForm<{ dx: RawLoker[] }>(
+      'datalokercdc',
+      { idloker: '', kode: CDC_KODE, id_prov: '', id_kab: '', deskripsi: 'ada' },
       REVALIDATE_JOBS,
       { dx: [] },
     ),
     getCategoryMap(),
   ])
-  return data.dx
+
+  const byId = new Map<string, RawLoker>()
+  for (const r of bulk.dx) byId.set(r.id_loker, r)
+  for (const r of rich.dx) byId.set(r.id_loker, r) // rich overrides bulk
+
+  return [...byId.values()]
     .filter((r) => r.status === '0') // active listings only
     .map((r) => mapLoker(r, catMap.get(r.id_kategori_loker)))
-    .sort((a, b) => Number(b.id) - Number(a.id)) // newest first
+    // Newest first by posting date, with id as tiebreaker (id alone is unreliable
+    // since the rich subset can carry higher ids than the latest bulk listings).
+    .sort((a, b) => b.postedAt.localeCompare(a.postedAt) || Number(b.id) - Number(a.id))
 })

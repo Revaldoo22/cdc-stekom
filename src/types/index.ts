@@ -12,6 +12,8 @@ export interface Job {
   employmentTypeSlug: string
   experienceLevel?: 'fresh-graduate' | 'junior' | 'mid' | 'senior'
   salary?: string
+  education?: string
+  disabilityFriendly?: boolean
   description: string
   requirements: string[]
   skills: string[]
@@ -83,6 +85,8 @@ export interface EventsResponse {
 export interface FormSubmitPayload {
   formType: 'job-application' | 'vjf' | 'offline'
   data: Record<string, string>
+  // UTM params captured from the landing URL — forwarded to the sheet as-is.
+  utm?: Record<string, string>
 }
 
 export interface Crumb {
