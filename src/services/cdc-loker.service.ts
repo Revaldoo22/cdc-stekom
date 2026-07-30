@@ -88,13 +88,19 @@ const DESC_PLACEHOLDER =
 
 const EMPTY_META: Meta = { total: 0, page: 1, per_page: 0, total_pages: 0 }
 
-// The origin sits behind Cloudflare and rejects datacenter traffic with a 403
-// before the API's own auth ever runs — a valid X-API-Key returns 200 from a
-// residential IP but 403 from Vercel's build/runtime IPs, and an absent key
-// returns 401, so 403 is definitively the edge and not the key. Browser-like
-// headers are what get through; the same workaround the pre-v1 client used.
-// TODO: remove once the backend allowlists the deployment IPs / trusts the API
-// key alone (API-REQUIREMENTS.md §0.4).
+// BLOCKER: the origin returns 403 to Vercel's IPs regardless of these headers.
+//
+// Measured from a residential IP, every variant returns 200 — with or without a
+// User-Agent, with or without an Origin header. An invalid key returns 401 with
+// a JSON body from the PHP app, and no key returns 401 too, so the API's own auth
+// never emits 403. Vercel gets 403 on *both* cdc.stekom.ac.id and toploker.com
+// (different hosts, different keys, identical failure), which only an IP-based
+// block explains.
+//
+// These headers therefore do NOT fix the deploy; they are kept because they cost
+// nothing and are required if the block is later narrowed to a UA check. The real
+// fix is server-side: the backend must allowlist the deployment egress IPs or
+// trust X-API-Key alone (API-REQUIREMENTS.md §0.4).
 const BROWSER_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
