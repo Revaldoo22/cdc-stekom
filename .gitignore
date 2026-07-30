@@ -42,3 +42,8 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Backend API handover notes — contain live X-API-Key / X-Admin-Key values.
+# Keep local only; never commit.
+API-STATUS*.txt
+API-STATUS*.md

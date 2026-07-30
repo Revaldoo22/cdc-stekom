@@ -1,3 +1,17 @@
+// Read a required server-side secret. Called lazily at request time rather than
+// at module scope: this module is also pulled into the client bundle (via
+// JobListingClient), where server-only vars are undefined by design — throwing
+// eagerly would break the browser build instead of the misconfigured server.
+function requireEnv(name: string): string {
+  const v = process.env[name]
+  if (!v) {
+    throw new Error(
+      `${name} is not set. Add it to .env.local (see .env.example) or the deployment environment.`,
+    )
+  }
+  return v
+}
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cdc.stekom.ac.id'
 export const GOOGLE_SHEET_WEBHOOK = process.env.GOOGLE_SHEET_WEBHOOK_URL ?? ''
@@ -9,23 +23,26 @@ export const REVALIDATE_EVENTS = 3600
 export const PER_PAGE = 12
 export const RELATED_JOBS_COUNT = 5
 
-// ─── CDC Stekom loker API ──────────────────────────────────────────────────────
-// The dataloker endpoint is cursor-based: it returns every job with
-// id_loker > LOKER_CURSOR (no limit param). A low cursor returns hundreds of
-// thousands of rows and crashes the server, so we keep the cursor high to pull
-// only a recent batch. Bump LOKER_CURSOR down to widen the window.
-export const CDC_API_BASE = 'https://cdc.stekom.ac.id/curl_loker'
-// Loker list endpoint. `datalokercdc` returns jenis_kerja, gaji, deskripsi and
-// supports a `deskripsi=ada` filter that returns only listings with a real
-// description (small, rich result set). That's our source of truth.
-export const CDC_LOKER_ENDPOINT = process.env.CDC_LOKER_ENDPOINT ?? 'datalokercdc'
-export const CDC_KODE = process.env.CDC_LOKER_KODE ?? 'klashdioasfiosabiobhioobd873546769743663769736463769'
-export const LOKER_CURSOR = Number(process.env.CDC_LOKER_CURSOR ?? 1812879) // ~60 most-recent jobs
+// ─── CDC Stekom REST API (v1) ──────────────────────────────────────────────────
+// Replaces the old POST /curl_loker/* endpoints. Server-side pagination and
+// filtering over the full ~570k listing corpus, authenticated with X-API-Key.
+//
+// The key is a server-side secret: it must never be exposed with NEXT_PUBLIC_.
+// Every caller lives in a server component / service, so the bare env var is
+// correct here. There is deliberately no fallback — a missing key must fail
+// loudly at startup rather than silently shipping a dev credential.
+export const CDC_API_BASE = process.env.CDC_API_BASE ?? 'https://cdc.stekom.ac.id/api'
+export const getCdcApiKey = () => requireEnv('CDC_API_KEY')
+
+// Upper bound the API enforces on per_page for the loker list.
+export const CDC_MAX_PER_PAGE = 100
+// Upper bound for the sitemap feed (much higher — it returns only 4 fields).
+export const CDC_SITEMAP_MAX_PER_PAGE = 5000
 
 // ─── Virtual Job Fair API (TopLoker) ─────────────────────────────────────────
 // Returns all VJF batches. Note: different host + different key than the loker API.
-export const VJF_API_URL = 'https://toploker.com/curl/virtual_jobfair'
-export const VJF_KEY = process.env.VJF_API_KEY ?? 'klashdioasfiosabiobh231rd873546769743663769736463769'
+export const VJF_API_URL = process.env.VJF_API_URL ?? 'https://toploker.com/curl/virtual_jobfair'
+export const getVjfKey = () => requireEnv('VJF_API_KEY')
 
 // Use the real CDC API unless explicitly forced to mock
 export const USE_MOCK = process.env.USE_MOCK === 'true'

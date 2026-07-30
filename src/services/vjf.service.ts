@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { VJF_API_URL, VJF_KEY, REVALIDATE_EVENTS } from '@/config/api'
+import { VJF_API_URL, getVjfKey, REVALIDATE_EVENTS } from '@/config/api'
 import type { RecruitmentEvent } from '@/types'
 
 // ─── Raw API shape (toploker.com/curl/virtual_jobfair) ───────────────────────────
@@ -95,11 +95,14 @@ function mapVjf(raw: RawVjf): RecruitmentEvent {
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 
 export const fetchVjfEvents = cache(async (): Promise<RecruitmentEvent[]> => {
+  // Resolved outside the try so a missing key is a hard configuration error
+  // rather than being swallowed into the empty-array fallback below.
+  const key = getVjfKey()
   try {
     const res = await fetch(VJF_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ key_api: VJF_KEY }).toString(),
+      body: new URLSearchParams({ key_api: key }).toString(),
       next: { revalidate: REVALIDATE_EVENTS },
     })
     if (!res.ok) throw new Error(`VJF API → HTTP ${res.status}`)

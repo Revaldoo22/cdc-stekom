@@ -32,9 +32,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return generateJobMetadata(job)
 }
 
+// Prebuild the newest listings; everything else is generated on demand and
+// cached by ISR. The corpus is ~570k rows, so exhaustive prerendering is out.
 export async function generateStaticParams() {
   const { jobs } = await fetchJobs({ perPage: 100 })
   return jobs.map((j) => ({ slug: j.slug }))
+}
+
+// Read the clock once, outside the component body: the "expired" flag and the
+// day count must agree, and reading it during render is impure. Unlike the old
+// endpoint, tanggal_kadaluarsa is populated by the v1 API, so these branches now
+// carry real data.
+function expiryStatus(expiresAt?: string): { isExpired: boolean; daysLeft: number | null } {
+  if (!expiresAt) return { isExpired: false, daysLeft: null }
+  const due = new Date(expiresAt).getTime()
+  if (Number.isNaN(due)) return { isExpired: false, daysLeft: null }
+  const now = Date.now()
+  return { isExpired: due < now, daysLeft: Math.ceil((due - now) / 86_400_000) }
 }
 
 const TYPE_STYLE: Record<string, string> = {
@@ -52,15 +66,14 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const [related, sameLocation] = await Promise.all([
     fetchRelatedJobs(job, RELATED_JOBS_COUNT),
-    fetchJobs({ location: job.locationSlug, perPage: RELATED_JOBS_COUNT + 1 }).then(
-      (r) => r.jobs.filter((j) => j.id !== job.id).slice(0, RELATED_JOBS_COUNT),
-    ),
+    job.locationSlug
+      ? fetchJobs({ location: job.locationSlug, perPage: RELATED_JOBS_COUNT + 1 }).then(
+          (r) => r.jobs.filter((j) => j.id !== job.id).slice(0, RELATED_JOBS_COUNT),
+        )
+      : Promise.resolve([]),
   ])
 
-  const isExpired = job.expiresAt ? new Date(job.expiresAt) < new Date() : false
-  const daysLeft = job.expiresAt
-    ? Math.ceil((new Date(job.expiresAt).getTime() - Date.now()) / 86_400_000)
-    : null
+  const { isExpired, daysLeft } = expiryStatus(job.expiresAt)
 
   const crumbs = [
     { label: 'Beranda', href: '/' },
@@ -88,9 +101,19 @@ export default async function JobDetailPage({ params }: PageProps) {
 
             {/* Left: logo + info */}
             <div className="flex gap-5 min-w-0">
-              {/* Company logo */}
-              <div className="shrink-0 flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-border bg-brand-bg">
-                <Building2 className="h-7 w-7 text-brand-muted" aria-hidden="true" />
+              {/* Company logo — the API returns an absolute URL when one exists. */}
+              <div className="shrink-0 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-border bg-brand-bg">
+                {job.companyLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- remote host is not in next.config images
+                  <img
+                    src={job.companyLogo}
+                    alt={`Logo ${job.company}`}
+                    className="h-full w-full object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <Building2 className="h-7 w-7 text-brand-muted" aria-hidden="true" />
+                )}
               </div>
 
               {/* Title block */}
