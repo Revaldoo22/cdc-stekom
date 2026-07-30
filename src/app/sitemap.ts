@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from '@/config/api'
 import { fetchCategories, fetchLocations, fetchTipeKerja } from '@/services/jobs.service'
-import { getCdcSitemapEntries, sitemapSlug } from '@/services/cdc-loker.service'
+import { getCdcSitemapEntries, sitemapSlug, assertApiReachable } from '@/services/cdc-loker.service'
 import { fetchEvents } from '@/services/events.service'
 import { seoUrl } from '@/lib/seo-urls'
 
@@ -44,6 +44,9 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
   // ── Job shards: use the lightweight sitemap feed (4 fields/row) ──
   if (sid >= 1 && sid <= JOB_SHARDS) {
     const { entries } = await getCdcSitemapEntries(sid, JOBS_PER_SHARD)
+    // The first shard always has data when the API is up; an empty one means the
+    // fetch fell back. Fail the build rather than publishing an empty sitemap.
+    if (sid === 1) assertApiReachable()
     return entries.map((e) => ({
       url: `${SITE_URL}/job/${sitemapSlug(e)}`,
       lastModified: new Date(e.updated_at ?? e.tanggal),

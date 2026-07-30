@@ -88,8 +88,40 @@ const DESC_PLACEHOLDER =
 
 const EMPTY_META: Meta = { total: 0, page: 1, per_page: 0, total_pages: 0 }
 
-// Every endpoint is GET + X-API-Key. A failure must never crash the build: return
-// the caller's fallback so the page renders and self-heals on next revalidation.
+// The origin sits behind Cloudflare and rejects datacenter traffic with a 403
+// before the API's own auth ever runs — a valid X-API-Key returns 200 from a
+// residential IP but 403 from Vercel's build/runtime IPs, and an absent key
+// returns 401, so 403 is definitively the edge and not the key. Browser-like
+// headers are what get through; the same workaround the pre-v1 client used.
+// TODO: remove once the backend allowlists the deployment IPs / trusts the API
+// key alone (API-REQUIREMENTS.md §0.4).
+const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  Accept: 'application/json, text/plain, */*',
+  'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+  Referer: 'https://cdc.stekom.ac.id/',
+} as const
+
+// Tracks whether any request has ever succeeded. If a whole build runs without a
+// single success, the fallbacks would bake an empty site into static HTML and
+// still exit 0 — so `assertApiReachable()` turns that into a failed build.
+let anySuccess = false
+let lastFailure = ''
+
+async function attempt(url: string, apiKey: string, revalidate: number): Promise<Response> {
+  const res = await fetch(url, {
+    headers: { ...BROWSER_HEADERS, 'X-API-Key': apiKey },
+    next: { revalidate },
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res
+}
+
+// Every endpoint is GET + X-API-Key. A failure must never crash a live page:
+// return the caller's fallback so the page renders and self-heals on the next
+// revalidation. Build-time totals are policed by assertApiReachable() instead.
 async function getJson<T>(
   path: string,
   params: Record<string, string | number | undefined>,
@@ -107,18 +139,34 @@ async function getJson<T>(
   // render every page empty.
   const apiKey = getCdcApiKey()
 
-  try {
-    const res = await fetch(url, {
-      headers: { 'X-API-Key': apiKey, Accept: 'application/json' },
-      next: { revalidate },
-      signal: AbortSignal.timeout(30_000),
-    })
-    if (!res.ok) throw new Error(`CDC ${path} → HTTP ${res.status}`)
-    return (await res.json()) as T
-  } catch (err) {
-    console.error(`[cdc-loker] ${path} failed, using fallback:`, err)
-    return fallback
+  // One retry: the Cloudflare edge in front of the origin rejects some requests
+  // intermittently, and a single 403 should not blank a whole page.
+  for (let i = 0; i < 2; i++) {
+    try {
+      const res = await attempt(url, apiKey, revalidate)
+      anySuccess = true
+      return (await res.json()) as T
+    } catch (err) {
+      lastFailure = `${path} → ${err instanceof Error ? err.message : String(err)}`
+      if (i === 0) continue
+      console.error(`[cdc-loker] ${lastFailure}, using fallback`)
+    }
   }
+  return fallback
+}
+
+/**
+ * Fail the build when the API was never reachable. Without this the fallbacks
+ * make a total outage look like a clean build: `next build` exits 0 and ships
+ * static pages with zero jobs, an empty sitemap and mock events.
+ */
+export function assertApiReachable(): void {
+  if (anySuccess) return
+  throw new Error(
+    `CDC API unreachable during build — every request failed (last: ${lastFailure || 'none attempted'}).\n` +
+      `A 403 here means the origin is blocking this IP rather than rejecting the key ` +
+      `(a bad key returns 401). Refusing to publish an empty site.`,
+  )
 }
 
 // ─── Text cleanup ────────────────────────────────────────────────────────────────

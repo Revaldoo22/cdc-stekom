@@ -101,7 +101,15 @@ export const fetchVjfEvents = cache(async (): Promise<RecruitmentEvent[]> => {
   try {
     const res = await fetch(VJF_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        // TopLoker blocks datacenter IPs with a 403 the same way cdc.stekom.ac.id
+        // does, so this host needs the browser-like headers too.
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        Accept: 'application/json, text/plain, */*',
+        Referer: 'https://toploker.com/',
+      },
       body: new URLSearchParams({ key_api: key }).toString(),
       next: { revalidate: REVALIDATE_EVENTS },
     })
