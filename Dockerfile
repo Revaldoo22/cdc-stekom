@@ -15,7 +15,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Public env vars must be present at build time (Next.js inlines NEXT_PUBLIC_*).
-ARG NEXT_PUBLIC_SITE_URL
+# Default keeps the var unset (not empty string) when Dokploy doesn't pass the build arg.
+ARG NEXT_PUBLIC_SITE_URL=https://cdc.stekom.ac.id
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 ENV NEXT_TELEMETRY_DISABLED=1

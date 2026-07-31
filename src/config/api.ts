@@ -13,7 +13,7 @@ function requireEnv(name: string): string {
 }
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cdc.stekom.ac.id'
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cdc.stekom.ac.id'
 export const GOOGLE_SHEET_WEBHOOK = process.env.GOOGLE_SHEET_WEBHOOK_URL ?? ''
 
 export const REVALIDATE_JOBS = 3600
