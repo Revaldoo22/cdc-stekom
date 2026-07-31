@@ -69,8 +69,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // For VPS deployment: uncomment below
-  // output: "standalone",
+  // Standalone output for Docker/VPS deployment (Dokploy).
+  output: "standalone",
 };
 
 export default nextConfig;
