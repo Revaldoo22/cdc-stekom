@@ -10,12 +10,13 @@ import {
   Bookmark, BookmarkCheck, SlidersHorizontal,
 } from 'lucide-react'
 import type { Job, Category, Location, TipeKerja } from '@/types'
-import { SALARY_RANGES } from '@/config/filters'
+import { SALARY_RANGES, EXPERIENCE_LEVELS } from '@/config/filters'
 import { buildJobsUrl } from '@/lib/seo-urls'
 import { useSavedJobs } from '@/hooks/useSavedJobs'
 import { NoResults } from '@/components/shared/NoResults'
 import { Pagination } from '@/components/shared/Pagination'
 import { ApplyButton } from '@/features/jobs/ApplyButton'
+import { FilterSheet, type FilterGroup, type FilterValues } from '@/features/jobs/FilterSheet'
 import { PER_PAGE } from '@/config/api'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -55,8 +56,12 @@ interface FilterPillProps {
   dark?: boolean
 }
 
+// Di atas ambang ini, dropdown pill dapat input pencarian.
+const PILL_SEARCH_THRESHOLD = 10
+
 function FilterPill({ label, icon, options, value, onChange, dark = false }: FilterPillProps) {
   const [open, setOpen]       = useState(false)
+  const [query, setQuery]     = useState('')
   const [rect, setRect]       = useState<DOMRect | null>(null)
   const [mounted, setMounted] = useState(false)
   const btnRef   = useRef<HTMLButtonElement>(null)
@@ -74,16 +79,32 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
       // explicitly or clicking an option would close the menu before selecting.
       if (!btnRef.current?.contains(target) && !panelRef.current?.contains(target)) {
         setOpen(false)
+        setQuery('')
       }
     }
     document.addEventListener('mousedown', onOutside)
     return () => document.removeEventListener('mousedown', onOutside)
   }, [open])
 
-  function handleToggle() {
-    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect())
-    setOpen((v) => !v)
+  // Query selalu dibersihkan saat panel ditutup, supaya sisa pencarian lama
+  // tidak menyembunyikan opsi ketika dropdown dibuka lagi.
+  function close() {
+    setOpen(false)
+    setQuery('')
   }
+
+  function handleToggle() {
+    if (open) { close(); return }
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect())
+    setOpen(true)
+  }
+
+  // Pencarian hanya muncul untuk daftar panjang (Lokasi ~320, Bidang ~19);
+  // untuk Gaji/Jenis yang cuma 4-5 opsi, input pencarian jadi gangguan.
+  // Semua opsi tetap ditampilkan — daftarnya discroll, tidak dipotong.
+  const searchable = options.length > PILL_SEARCH_THRESHOLD
+  const q = query.trim().toLowerCase()
+  const visible = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options
 
   const dropdown =
     mounted && open && rect
@@ -91,32 +112,67 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
           <div
             ref={panelRef}
             style={{ position: 'fixed', top: rect.bottom + 6, left: rect.left, zIndex: 9999 }}
-            className="min-w-50 max-h-72 overflow-y-auto rounded-2xl border border-border bg-white py-2 shadow-lg"
+            className="w-64 overflow-hidden rounded-2xl border border-border bg-white shadow-lg"
           >
-            {active && (
-              <button
-                type="button"
-                onClick={() => { onChange(''); setOpen(false) }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-red-50 transition-colors cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" /> Hapus filter
-              </button>
+            {searchable && (
+              <div className="border-b border-border p-2">
+                <div className="flex items-center gap-2 rounded-lg bg-muted px-2.5">
+                  <Search className="h-3.5 w-3.5 shrink-0 text-brand-muted" aria-hidden />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        if (visible.length > 0) { onChange(visible[0].value); close() }
+                      }
+                      if (e.key === 'Escape') close()
+                    }}
+                    placeholder={`Cari ${label.toLowerCase()}...`}
+                    aria-label={`Cari ${label}`}
+                    className="w-full bg-transparent py-2 text-sm text-brand-text outline-none placeholder:text-brand-muted"
+                  />
+                </div>
+              </div>
             )}
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => { onChange(opt.value); setOpen(false) }}
-                className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                  value === opt.value
-                    ? 'bg-primary/[0.07] text-primary font-semibold'
-                    : 'text-brand-text hover:bg-slate-50'
-                }`}
-              >
-                <span>{opt.label}</span>
-                {value === opt.value && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
-              </button>
-            ))}
+
+            <div className="max-h-80 overflow-y-auto overscroll-contain py-2">
+              {active && !q && (
+                <button
+                  type="button"
+                  onClick={() => { onChange(''); close() }}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" /> Hapus filter
+                </button>
+              )}
+              {visible.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { onChange(opt.value); close() }}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors cursor-pointer ${
+                    value === opt.value
+                      ? 'bg-primary/[0.07] text-primary font-semibold'
+                      : 'text-brand-text hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+                  {value === opt.value && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              ))}
+              {visible.length === 0 && (
+                <p className="px-4 py-6 text-center text-sm text-brand-muted">Tidak ditemukan.</p>
+              )}
+            </div>
+
+            {q && visible.length > 0 && (
+              <p className="border-t border-border bg-brand-bg px-4 py-2 text-[11px] text-brand-muted">
+                {visible.length} hasil
+              </p>
+            )}
           </div>,
           document.body,
         )
@@ -359,6 +415,24 @@ function JobDetailPanel({ job }: { job: Job }) {
             </div>
           )}
 
+          {/* Apply / Save — above the description */}
+          <div className="flex items-center gap-2 mb-6">
+            <ApplyButton job={job} disabled={isExpired} className="flex-1" />
+            <button
+              type="button"
+              onClick={() => toggleSave(job.id)}
+              aria-label={saved ? 'Hapus dari tersimpan' : 'Simpan'}
+              className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-[13px] font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                saved
+                  ? 'border-primary/30 bg-primary/5 text-primary'
+                  : 'border-border text-brand-muted hover:border-primary/40 hover:text-primary hover:bg-primary/4'
+              }`}
+            >
+              {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+              Simpan
+            </button>
+          </div>
+
           {/* Content sections */}
           <div className="space-y-8">
 
@@ -477,6 +551,10 @@ interface JobListingClientProps {
   initialExperience: string
   initialJobId?: string
   initialSelectedJob?: Job | null
+  /** Istilah yang benar-benar dipakai server (kueri multi-kata dipecah). */
+  appliedKeyword?: string
+  appliedLocationName?: string
+  relaxed?: boolean
 }
 
 export function JobListingClient({
@@ -484,6 +562,7 @@ export function JobListingClient({
   initialPage, initialKeyword, initialCategory,
   initialLocation, initialTipe, initialSalary, initialExperience,
   initialJobId = '', initialSelectedJob = null,
+  appliedKeyword, appliedLocationName, relaxed = false,
 }: JobListingClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -492,6 +571,7 @@ export function JobListingClient({
   // initialJobId; a card click only updates this state + the URL (no reload).
   const [selectedId, setSelectedId] = useState(initialJobId)
   const [keyword, setKeyword]       = useState(initialKeyword)
+  const [sheetOpen, setSheetOpen]   = useState(false)
 
   // Prefer the job in the current page slice; fall back to the server-resolved
   // deep-link job (which may live on another page of the full batch).
@@ -551,12 +631,39 @@ export function JobListingClient({
     [router, currentFilter],
   )
 
-  const salaryOptions   = SALARY_RANGES.map((r) => ({ value: r.slug, label: r.label }))
-  const tipeOptions     = tipeKerja.map((t)     => ({ value: t.slug, label: t.name }))
-  const locationOptions = locations.map((l)     => ({ value: l.slug, label: l.name }))
-  const categoryOptions = categories.map((c)    => ({ value: c.slug, label: c.name }))
+  // Gaji & pengalaman TIDAK diurut A–Z: urutan aslinya sudah bermakna
+  // (rendah→tinggi), mengurut alfabetis justru mengacaukannya.
+  const salaryOptions     = SALARY_RANGES.map((r) => ({ value: r.slug, label: r.label }))
+  const experienceOptions = EXPERIENCE_LEVELS.map((e) => ({ value: e.slug, label: e.label }))
+  const tipeOptions       = tipeKerja.map((t) => ({ value: t.slug, label: t.name }))
+  // Lokasi & bidang diurut A–Z — daftarnya panjang (~320 & ~19), jadi urutan
+  // alfabetis jauh lebih mudah dipindai daripada urutan jumlah loker.
+  const byName = (a: { label: string }, b: { label: string }) =>
+    a.label.localeCompare(b.label, 'id')
+  const locationOptions = locations
+    .map((l) => ({ value: l.slug, label: l.name }))
+    .sort(byName)
+  const categoryOptions = categories
+    .map((c) => ({ value: c.slug, label: c.name }))
+    .sort(byName)
 
   const activeCount = [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience].filter(Boolean).length
+
+  // Bottom sheet mobile. Key harus sama dengan nama param di updateParams.
+  const sheetGroups: FilterGroup[] = [
+    { key: 'salary',     label: 'Kisaran Gaji',     options: salaryOptions },
+    { key: 'tipe',       label: 'Jenis Pekerjaan',  options: tipeOptions },
+    { key: 'experience', label: 'Level Pengalaman', options: experienceOptions },
+    { key: 'location',   label: 'Lokasi',           options: locationOptions },
+    { key: 'category',   label: 'Bidang',           options: categoryOptions },
+  ]
+  const sheetValue: FilterValues = {
+    salary:     initialSalary,
+    tipe:       initialTipe,
+    experience: initialExperience,
+    location:   initialLocation,
+    category:   initialCategory,
+  }
 
   // Filter bar: search row ~78px + pills row ~62px = ~140px. Navbar = 64px. Total = 204px.
   const stickyTop    = 'top-[204px]'
@@ -564,6 +671,14 @@ export function JobListingClient({
 
   return (
     <div>
+
+      <FilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        groups={sheetGroups}
+        value={sheetValue}
+        onApply={(next) => updateParams(next)}
+      />
 
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-16 z-20 bg-primary shadow-md">
@@ -605,12 +720,29 @@ export function JobListingClient({
 
           {/* Filter pills row */}
           <div className="flex items-center gap-2.5 pb-6">
-            <span className="flex items-center gap-1.5 shrink-0 text-[12px] font-semibold uppercase tracking-wide text-white/45">
+            {/* Mobile: tombol pembuka bottom sheet. Dropdown per-pill terlalu
+                sempit di layar kecil, jadi semua filter dikumpulkan di sheet. */}
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/30 px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-white/10 lg:hidden"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+              Filter
+              {activeCount > 0 && (
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-primary">
+                  {activeCount}
+                </span>
+              )}
+            </button>
+
+            {/* Desktop: label statis + pills */}
+            <span className="hidden shrink-0 items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-white/45 lg:flex">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
               Filter
             </span>
-            <span className="h-4 w-px bg-white/15 shrink-0" aria-hidden />
-            <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-none">
+            <span className="hidden h-4 w-px shrink-0 bg-white/15 lg:block" aria-hidden />
+            <div className="hidden items-center gap-2 flex-1 overflow-x-auto scrollbar-none lg:flex">
               <FilterPill dark label="Gaji"   icon={<BadgeDollarSign className="h-3.5 w-3.5" />} options={salaryOptions}   value={initialSalary}   onChange={(v) => updateParams({ salary: v })} />
               <FilterPill dark label="Jenis"  icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     onChange={(v) => updateParams({ tipe: v })} />
               <FilterPill dark label="Lokasi" icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} onChange={(v) => updateParams({ location: v })} />
@@ -626,7 +758,7 @@ export function JobListingClient({
                 </button>
               )}
             </div>
-            <p className="ml-2 shrink-0 text-[12.5px] font-medium text-white/55">
+            <p className="ml-auto shrink-0 text-[12.5px] font-medium text-white/55 lg:ml-2">
               <span className="font-bold text-white">{total.toLocaleString('id-ID')}</span> lowongan
             </p>
           </div>
@@ -638,6 +770,20 @@ export function JobListingClient({
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
         <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
+          {/* Kueri multi-kata dipecah oleh server (API hanya cocokkan 1 istilah
+              literal). Beri tahu user istilah mana yang akhirnya dipakai supaya
+              hasil yang "tidak persis" tidak terasa seperti bug. */}
+          {!isPending && relaxed && jobs.length > 0 && (
+            <p className="border-b border-border/60 bg-amber-50 px-5 py-3 text-xs leading-relaxed text-amber-900">
+              Tidak ada hasil yang cocok persis untuk{' '}
+              <strong className="font-semibold">&ldquo;{initialKeyword}&rdquo;</strong>.
+              Menampilkan lowongan
+              {appliedKeyword && <> untuk <strong className="font-semibold">{appliedKeyword}</strong></>}
+              {appliedLocationName && <> di <strong className="font-semibold">{appliedLocationName}</strong></>}
+              .
+            </p>
+          )}
+
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
           ) : jobs.length === 0 ? (

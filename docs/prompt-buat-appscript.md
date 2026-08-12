@@ -26,9 +26,13 @@ UTM (`utm_source`, `utm_medium`, `utm_campaign`, dll) yang jumlah dan namanya di
 ```
 ```json
 { "formType": "job-application", "name": "Andi", "email": "andi@mail.com",
-  "phone": "081234567890", "cvLink": "https://drive.google.com/...", "jobId": "1814031",
+  "phone": "081234567890", "address": "Jl. Majapahit No. 605, Semarang",
+  "cvLink": "https://drive.google.com/...",
+  "jobId": "https://cdc.stekom.ac.id/loker?jobId=1827124",
   "message": "Saya tertarik posisi ini" }
 ```
+
+Perhatikan `jobId` dikirim sebagai **URL loker penuh**, bukan angka ID.
 
 **Kebutuhan script**:
 1. Tulis baris ke **tab sesuai `formType`** (`vjf`, `offline`, `job-application`).
@@ -41,6 +45,8 @@ UTM (`utm_source`, `utm_medium`, `utm_campaign`, dll) yang jumlah dan namanya di
    field yang tidak ada dibiarkan kosong. Jangan tulis field `formType` ke dalam sel
    (cukup dipakai untuk memilih tab).
 5. Gunakan **LockService** agar submission bersamaan tidak saling menimpa baris.
+   Nilai yang berupa URL (`jobId`, `cvLink`) ditulis sebagai formula
+   `=HYPERLINK("…")` supaya bisa langsung diklik dari spreadsheet.
 6. `doPost` mengembalikan JSON `{ "success": true }` atau
    `{ "success": false, "error": ... }`. Tambahkan `doGet` sederhana untuk health-check.
 7. Bungkus respons dengan `ContentService` MIME `application/json`.

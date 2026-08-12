@@ -17,8 +17,16 @@ dan **menambah kolom otomatis** kalau ada field baru — jadi aman walau payload
 
 // Lamaran Loker (job-application)
 { "formType": "job-application", "name": "...", "email": "...", "phone": "...",
-  "cvLink": "https://...", "jobId": "...", "message": "..." }
+  "address": "Jl. Majapahit No. 605, Semarang",
+  "cvLink": "https://...",
+  "jobId": "https://cdc.stekom.ac.id/loker?jobId=1827124",   // link, bukan angka ID
+  "message": "..." }
 ```
+
+> **Catatan `jobId`**: sejak form dipakai tim rekrutmen langsung dari spreadsheet,
+> field ini dikirim sebagai **URL loker penuh** (`https://cdc.stekom.ac.id/loker?jobId=…`)
+> supaya selnya bisa langsung diklik. Nama field tetap `jobId` agar kolom sheet
+> yang sudah ada tidak perlu diubah.
 
 ## 2. Struktur Spreadsheet
 
@@ -29,7 +37,7 @@ submission pertama masuk. Tab yang akan dibuat:
 |-----|------------------------------------------------------------|
 | `vjf` | timestamp, name, email, phone, interestedKuliahKerja, eventId, utm_source, utm_medium, utm_campaign, … |
 | `offline` | timestamp, name, email, phone, eventId |
-| `job-application` | timestamp, name, email, phone, cvLink, jobId, message |
+| `job-application` | timestamp, name, email, phone, address, cvLink, jobId, message |
 
 Kolom `utm_*` baru muncul saat ada submission yang membawanya, dan ditambahkan
 di ujung kanan secara otomatis.
@@ -76,12 +84,17 @@ function doPost(e) {
       headers = headers.concat(newKeys);
     }
 
-    // Susun baris sesuai urutan header.
+    // Susun baris sesuai urutan header. Nilai berupa URL (jobId, cvLink) ditulis
+    // sebagai formula HYPERLINK supaya bisa langsung diklik dari spreadsheet.
     const record = headers.map(function (h) {
       if (h === 'timestamp') {
         return Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
       }
-      return row[h] !== undefined ? row[h] : '';
+      const v = row[h] !== undefined ? row[h] : '';
+      if (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) {
+        return '=HYPERLINK("' + v.trim().replace(/"/g, '%22') + '")';
+      }
+      return v;
     });
     sheet.appendRow(record);
 
@@ -130,6 +143,11 @@ GOOGLE_SHEET_WEBHOOK_URL=https://script.google.com/macros/s/XXXXXXXX/exec
 ```bash
 curl -X POST "<WEB_APP_URL>" -H "Content-Type: application/json" \
   -d '{"formType":"vjf","name":"Tes","email":"t@e.com","phone":"081234567890","interestedKuliahKerja":"ya","eventId":"90","utm_source":"cdc","utm_medium":"banner"}'
+```
+
+```bash
+curl -X POST "<WEB_APP_URL>" -H "Content-Type: application/json" \
+  -d '{"formType":"job-application","name":"Andi","email":"a@e.com","phone":"081234567890","address":"Jl. Majapahit No. 605, Semarang","cvLink":"https://drive.google.com/abc","jobId":"https://cdc.stekom.ac.id/loker?jobId=1827124","message":"Tes"}'
 ```
 
 ## Catatan

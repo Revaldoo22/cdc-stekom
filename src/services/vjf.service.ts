@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { VJF_API_URL, getVjfKey, REVALIDATE_EVENTS } from '@/config/api'
 import type { RecruitmentEvent } from '@/types'
+import { computeEventStatus } from '@/lib/events'
 
 // ─── Raw API shape (toploker.com/curl/virtual_jobfair) ───────────────────────────
 
@@ -63,17 +64,6 @@ function batchFromTitle(t: string): number {
   return m ? Number(m[1]) : 0
 }
 
-// JS Date is forbidden in workflow scripts but fine here (server component).
-function computeStatus(start: string, end: string): RecruitmentEvent['status'] {
-  const now = Date.now()
-  const s = new Date(start.replace(' ', 'T')).getTime()
-  const e = new Date((end || start).replace(' ', 'T')).getTime()
-  if (Number.isNaN(s)) return 'past'
-  if (now < s) return 'upcoming'
-  if (now <= e) return 'ongoing'
-  return 'past'
-}
-
 function mapVjf(raw: RawVjf): RecruitmentEvent {
   return {
     id: raw.id,
@@ -88,7 +78,7 @@ function mapVjf(raw: RawVjf): RecruitmentEvent {
     organizer: 'CDC Universitas STEKOM & TopLoker.com',
     banner: raw.banner || undefined,
     registrationDeadline: raw.batas_daftar || undefined,
-    status: computeStatus(raw.tanggal_mulai, raw.tanggal_selesai),
+    status: computeEventStatus(raw.tanggal_mulai, raw.tanggal_selesai),
   }
 }
 

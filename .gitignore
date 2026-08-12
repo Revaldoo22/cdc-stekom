@@ -47,3 +47,6 @@ next-env.d.ts
 # Keep local only; never commit.
 API-STATUS*.txt
 API-STATUS*.md
+
+# Claude Code local settings — per-machine permissions and paths.
+.claude/

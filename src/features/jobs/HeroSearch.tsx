@@ -60,10 +60,13 @@ interface DropdownSelectProps {
   onChange: (value: string) => void
   placeholder: string
   icon: React.ReactNode
+  /** Label input pencarian, mis. "Cari kota". */
+  searchLabel: string
 }
 
-function DropdownSelect({ options, value, onChange, placeholder, icon }: DropdownSelectProps) {
+function DropdownSelect({ options, value, onChange, placeholder, icon, searchLabel }: DropdownSelectProps) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -76,12 +79,21 @@ function DropdownSelect({ options, value, onChange, placeholder, icon }: Dropdow
 
   const selected = options.find((o) => o.value === value)
 
+  // Semua hasil ditampilkan; panel dibatasi tingginya dan discroll.
+  const q = query.trim().toLowerCase()
+  const visible = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options
+
+  function close() {
+    setOpen(false)
+    setQuery('')
+  }
+
   return (
     <div ref={ref} className="relative flex items-center gap-2.5 flex-1 min-w-0">
       <span className="shrink-0 text-primary">{icon}</span>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : setOpen(true))}
         aria-haspopup="listbox"
         aria-expanded={open}
         className="flex flex-1 items-center justify-between gap-1 min-w-0 cursor-pointer group py-4"
@@ -96,38 +108,79 @@ function DropdownSelect({ options, value, onChange, placeholder, icon }: Dropdow
       </button>
 
       {open && (
-        <div
-          role="listbox"
-          className="absolute top-full left-0 z-50 mt-1 min-w-48 w-max rounded-xl border border-border bg-white py-1.5 shadow-xl"
-        >
-          <button
-            type="button"
-            role="option"
-            aria-selected={value === ''}
-            onClick={() => { onChange(''); setOpen(false) }}
-            className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-              value === '' ? 'bg-primary/8 text-primary font-semibold' : 'text-brand-muted hover:bg-muted hover:text-brand-text'
-            }`}
-          >
-            <span>{placeholder}</span>
-            {value === '' && <Check className="h-3.5 w-3.5 shrink-0" />}
-          </button>
-          <div className="my-1 border-t border-border" />
-          {options.map((opt) => (
-            <button
-              type="button"
-              key={opt.value}
-              role="option"
-              aria-selected={value === opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false) }}
-              className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-                value === opt.value ? 'bg-primary/8 text-primary font-semibold' : 'text-brand-text hover:bg-muted'
-              }`}
-            >
-              <span>{opt.label}</span>
-              {value === opt.value && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-            </button>
-          ))}
+        <div className="absolute top-full left-0 z-50 mt-1 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-white shadow-xl">
+          {/* Pencarian */}
+          <div className="border-b border-border p-2">
+            <div className="flex items-center gap-2 rounded-lg bg-muted px-2.5">
+              <Search className="h-3.5 w-3.5 shrink-0 text-brand-muted" aria-hidden="true" />
+              <input
+                type="text"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                // Enter di dalam panel tidak boleh men-submit form pencarian hero.
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    if (visible.length > 0) { onChange(visible[0].value); close() }
+                  }
+                  if (e.key === 'Escape') close()
+                }}
+                placeholder={searchLabel}
+                aria-label={searchLabel}
+                className="w-full bg-transparent py-2 text-sm text-brand-text outline-none placeholder:text-brand-muted"
+              />
+            </div>
+          </div>
+
+          <div role="listbox" className="max-h-80 overflow-y-auto overscroll-contain py-1.5">
+            {/* Opsi "semua" hanya relevan saat tidak sedang mencari. */}
+            {!q && (
+              <>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={value === ''}
+                  onClick={() => { onChange(''); close() }}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                    value === '' ? 'bg-primary/8 text-primary font-semibold' : 'text-brand-muted hover:bg-muted hover:text-brand-text'
+                  }`}
+                >
+                  <span>{placeholder}</span>
+                  {value === '' && <Check className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+                <div className="my-1 border-t border-border" />
+              </>
+            )}
+
+            {visible.map((opt) => (
+              <button
+                type="button"
+                key={opt.value}
+                role="option"
+                aria-selected={value === opt.value}
+                onClick={() => { onChange(opt.value); close() }}
+                className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm cursor-pointer transition-colors ${
+                  value === opt.value ? 'bg-primary/8 text-primary font-semibold' : 'text-brand-text hover:bg-muted'
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+                {value === opt.value && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+              </button>
+            ))}
+
+            {visible.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-brand-muted">
+                Tidak ditemukan.
+              </p>
+            )}
+          </div>
+
+          {q && visible.length > 0 && (
+            <p className="border-t border-border bg-brand-bg px-4 py-2 text-[11px] text-brand-muted">
+              {visible.length} hasil
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -149,8 +202,18 @@ export function HeroSearch({ locations, categories }: Props) {
     router.push(buildJobsUrl({ keyword: keyword.trim(), category, location }))
   }
 
-  const locationOptions: DropdownOption[] = locations.map((l) => ({ value: l.slug, label: l.name }))
-  const categoryOptions: DropdownOption[] = categories.map((c) => ({ value: c.slug, label: c.name }))
+  // Diurutkan A–Z supaya mudah dipindai; service-nya mengurutkan per jumlah
+  // loker (dipakai halaman /kategori & /daerah), jadi urutan diatur di sini saja.
+  // localeCompare 'id' agar huruf beraksen/kapital tidak tersortir aneh.
+  const byName = (a: { label: string }, b: { label: string }) =>
+    a.label.localeCompare(b.label, 'id')
+
+  const locationOptions: DropdownOption[] = locations
+    .map((l) => ({ value: l.slug, label: l.name }))
+    .sort(byName)
+  const categoryOptions: DropdownOption[] = categories
+    .map((c) => ({ value: c.slug, label: c.name }))
+    .sort(byName)
 
   return (
     <form
@@ -190,6 +253,7 @@ export function HeroSearch({ locations, categories }: Props) {
           value={location}
           onChange={setLocation}
           placeholder="Semua Kota"
+          searchLabel="Cari kota atau provinsi"
           icon={<MapPin className="h-4 w-4" />}
         />
       </div>
@@ -201,6 +265,7 @@ export function HeroSearch({ locations, categories }: Props) {
           value={category}
           onChange={setCategory}
           placeholder="Semua Bidang"
+          searchLabel="Cari bidang pekerjaan"
           icon={<Layers className="h-4 w-4" />}
         />
       </div>

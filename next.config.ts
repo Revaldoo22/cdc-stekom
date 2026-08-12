@@ -13,19 +13,23 @@ const csp = [
   // Next.js injects inline runtime/hydration scripts; 'unsafe-inline' is required
   // for it to work. No user-supplied input is ever rendered as a <script>.
   // 'unsafe-eval' is added in development only — see isDev above.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // www.instagram.com hosts embed.js, dipakai InstagramEmbed untuk pengumuman
+  // rekrutmen offline. Script itu memuat asetnya sendiri dari CDN Facebook.
+  `script-src 'self' 'unsafe-inline' https://www.instagram.com https://*.cdninstagram.com https://connect.facebook.net${isDev ? " 'unsafe-eval'" : ""}`,
   // Tailwind / Next inject inline <style>; 'unsafe-inline' needed.
   "style-src 'self' 'unsafe-inline'",
   // Images: self + the remote hosts we render (loker posters, VJF banners, stock).
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   // XHR/fetch targets — keep tight to the APIs we actually call.
-  "connect-src 'self' https://cdc.stekom.ac.id https://toploker.com",
+  "connect-src 'self' https://cdc.stekom.ac.id https://toploker.com https://www.instagram.com",
   // Form posts (VJF → WhatsApp, applications → Google Apps Script).
   "form-action 'self' https://wa.me https://script.google.com",
-  // Nobody may embed us in an <iframe> (clickjacking), and we frame nothing.
+  // Nobody may embed us in an <iframe> (clickjacking). Kita sendiri hanya
+  // mem-frame Instagram — embed.js menyuntikkan iframe post ke dalam blockquote.
+  // Host mengikuti setup yang sudah terbukti jalan di pmb.stekom.ac.id.
   "frame-ancestors 'none'",
-  "frame-src 'none'",
+  "frame-src 'self' https://www.instagram.com",
   "object-src 'none'",
   "base-uri 'self'",
   "upgrade-insecure-requests",

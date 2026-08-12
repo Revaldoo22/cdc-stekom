@@ -7,10 +7,13 @@ export const JobApplicationSchema = z.object({
   // Optional — kandidat boleh melamar tanpa link CV. Jika diisi, harus URL valid.
   cvLink: z
     .string()
-    .url('Link CV harus berupa URL yang valid (contoh: https://drive.google.com/...)')
+    .url('Link CV harus berupa URL yang valid dan bisa diakses publik (contoh: https://drive.google.com/...)')
     .optional()
     .or(z.literal('')),
-  jobId: z.string().min(1),
+  address: z.string().min(5, 'Alamat minimal 5 karakter').max(300),
+  // Dikirim sebagai URL loker penuh (https://cdc.stekom.ac.id/loker?jobId=…) agar
+  // baris di Google Sheet bisa langsung diklik, bukan sekadar angka ID.
+  jobId: z.string().url(),
   message: z.string().max(500).optional(),
 })
 

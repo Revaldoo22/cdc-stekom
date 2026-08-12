@@ -7,6 +7,7 @@ import { generateListingMetadata } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
 import { fetchEvents } from '@/services/events.service'
+import { isRegistrationOpen } from '@/lib/events'
 import { breadcrumbSchema } from '@/lib/schema'
 
 export const revalidate = 3600
@@ -105,9 +106,20 @@ export default async function VJFPage() {
                       <Badge className="bg-primary text-white hover:bg-primary border-0 shrink-0">
                         Batch {ev.batch}
                       </Badge>
-                      <span className="text-[11px] font-medium text-cta bg-cta/10 rounded-full px-2.5 py-0.5">
-                        Pendaftaran Dibuka
-                      </span>
+                      {/* Label mengikuti tanggal, bukan status yang ditulis tangan. */}
+                      {ev.status === 'ongoing' ? (
+                        <span className="text-[11px] font-semibold text-white bg-cta rounded-full px-2.5 py-0.5">
+                          Sedang Berlangsung
+                        </span>
+                      ) : isRegistrationOpen(ev) ? (
+                        <span className="text-[11px] font-medium text-cta bg-cta/10 rounded-full px-2.5 py-0.5">
+                          Pendaftaran Dibuka
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-medium text-brand-muted bg-muted rounded-full px-2.5 py-0.5">
+                          Pendaftaran Ditutup
+                        </span>
+                      )}
                     </div>
 
                     <div>

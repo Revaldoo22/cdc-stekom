@@ -24,7 +24,9 @@ yang dipakai melacak asal pengunjung. Kolom pertama setiap tab adalah `timestamp
 - **offline** (pendaftaran Rekrutmen Offline):
   `name`, `email`, `phone`, `eventId`.
 - **job-application** (lamaran lowongan):
-  `name`, `email`, `phone`, `cvLink` (URL), `jobId`, `message` (boleh kosong).
+  `name`, `email`, `phone`, `address` (alamat pelamar), `cvLink` (URL),
+  `jobId` (**URL loker penuh**, mis. `https://cdc.stekom.ac.id/loker?jobId=1827124`),
+  `message` (boleh kosong).
 
 **Yang saya butuhkan**:
 1. **3 tab terpisah**, beri nama persis: `vjf`, `offline`, `job-application`.
@@ -32,10 +34,11 @@ yang dipakai melacak asal pengunjung. Kolom pertama setiap tab adalah `timestamp
    `timestamp`. Untuk tab `vjf`, sertakan kolom UTM di ujung kanan
    (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`).
 3. **Rekomendasi format kolom**: `timestamp` sebagai Date time; `phone` sebagai Plain
-   text (agar `08...` tidak jadi angka & nol depan tidak hilang); `email`/`cvLink`
-   sebagai teks; `interestedKuliahKerja` boleh pakai Data Validation dropdown (ya/tidak).
+   text (agar `08...` tidak jadi angka & nol depan tidak hilang); `email`/`cvLink`/
+   `jobId`/`address` sebagai teks; `interestedKuliahKerja` boleh pakai Data Validation
+   dropdown (ya/tidak).
 4. Saran agar **baris header di-freeze** dan **di-bold**, serta lebar kolom yang nyaman
-   untuk `message` dan `cvLink`.
+   untuk `message`, `address`, `cvLink`, dan `jobId`.
 5. Saran opsional: tab ringkasan/`Dashboard` sederhana (mis. jumlah pendaftar per
    `eventId`, atau jumlah per `utm_source`) — sebutkan cara membuatnya dengan rumus
    (COUNTIF/QUERY), tanpa kode.
@@ -47,6 +50,7 @@ Tampilkan hasilnya sebagai tabel header per tab + langkah setup manual yang ring
 ## Catatan
 
 Header di atas harus **sama persis** dengan key yang dikirim website (case-sensitive),
-khususnya `interestedKuliahKerja`, `eventId`, `jobId`, `cvLink`, dan `utm_*` — supaya
-Apps Script bisa mencocokkan field ke kolom yang benar. Untuk skrip pengisiannya, lihat
+khususnya `interestedKuliahKerja`, `eventId`, `jobId`, `cvLink`, `address`, dan `utm_*`
+— supaya Apps Script bisa mencocokkan field ke kolom yang benar. Catatan: `jobId` berisi
+URL loker (bukan angka ID) dan ditulis script sebagai `=HYPERLINK(...)` agar bisa diklik. Untuk skrip pengisiannya, lihat
 [google-sheet-setup.md](google-sheet-setup.md).

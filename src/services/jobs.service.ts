@@ -3,6 +3,7 @@ import { SALARY_RANGES } from '@/config/filters'
 import type { Job, JobsResponse, JobsParams, Category, Location, TipeKerja } from '@/types'
 import {
   getCdcJobs,
+  searchCdcJobs,
   getCdcJobById,
   getCdcRelatedJobs,
   getCdcCategories,
@@ -29,13 +30,19 @@ function filterMockJobs(jobs: Job[], params: JobsParams): JobsResponse {
   let filtered = [...jobs]
 
   if (params.keyword) {
-    const kw = params.keyword.toLowerCase()
-    filtered = filtered.filter(
-      (j) =>
-        j.title.toLowerCase().includes(kw) ||
-        j.company.toLowerCase().includes(kw) ||
-        j.skills.some((s) => s.toLowerCase().includes(kw)),
-    )
+    // Cocokkan per kata (OR) lalu urutkan berdasarkan jumlah kata yang cocok,
+    // meniru perilaku searchCdcJobs: "marketing semarang" tetap memberi hasil
+    // walau tidak ada satu baris pun yang memuat kedua kata.
+    const words = params.keyword.toLowerCase().split(/\s+/).filter(Boolean)
+    const score = (j: Job) => {
+      const hay = `${j.title} ${j.company} ${j.location} ${j.skills.join(' ')}`.toLowerCase()
+      return words.filter((w) => hay.includes(w)).length
+    }
+    filtered = filtered
+      .map((j) => ({ j, s: score(j) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.j)
   }
   if (params.category) filtered = filtered.filter((j) => j.categorySlug === params.category)
   if (params.location) filtered = filtered.filter((j) => j.locationSlug === params.location)
@@ -69,7 +76,7 @@ export async function fetchJobs(params: JobsParams = {}): Promise<JobsResponse> 
 
   const range = params.salaryRange ? SALARY_RANGES.find((r) => r.slug === params.salaryRange) : undefined
 
-  const res = await getCdcJobs({
+  const cdcQuery = {
     page: params.page ?? 1,
     perPage: params.perPage ?? PER_PAGE,
     keyword: params.keyword,
@@ -81,9 +88,25 @@ export async function fetchJobs(params: JobsParams = {}): Promise<JobsResponse> 
     gajiMax: range && Number.isFinite(range.max) ? range.max : undefined,
     // Asking the API to sort by salary would also drop rows with no salary set,
     // so only switch sort when the user actually filtered on salary.
-    sort: range ? 'gaji_tertinggi' : 'terbaru',
-  })
+    sort: range ? ('gaji_tertinggi' as const) : ('terbaru' as const),
+  }
 
+  // Kueri multi-kata ("marketing semarang") selalu nol hasil di API karena `q`
+  // dicocokkan literal — searchCdcJobs memecahnya dan mencoba bertingkat.
+  if (params.keyword?.trim()) {
+    const res = await searchCdcJobs({ ...cdcQuery, keyword: params.keyword })
+    return {
+      jobs: res.jobs,
+      total: res.total,
+      page: res.page,
+      perPage: res.perPage,
+      appliedKeyword: res.appliedKeyword,
+      appliedLocationName: res.appliedLocationName,
+      relaxed: res.relaxed,
+    }
+  }
+
+  const res = await getCdcJobs(cdcQuery)
   return { jobs: res.jobs, total: res.total, page: res.page, perPage: res.perPage }
 }
 

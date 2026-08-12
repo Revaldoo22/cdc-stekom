@@ -27,6 +27,16 @@ export interface JobsResponse {
   total: number
   page: number
   perPage: number
+  // ── Hanya terisi pada pencarian keyword ──────────────────────────────────
+  // Kueri multi-kata dipecah karena API hanya mencocokkan satu istilah literal,
+  // jadi hasil bisa berasal dari istilah yang lebih longgar daripada yang
+  // diketik user. Tiga field ini dipakai UI untuk memberi tahu hal itu.
+  /** Istilah yang benar-benar dipakai untuk mengambil hasil ini. */
+  appliedKeyword?: string
+  /** Nama wilayah yang terdeteksi dari kueri. */
+  appliedLocationName?: string
+  /** True kalau syarat diturunkan agar tidak nol hasil. */
+  relaxed?: boolean
 }
 
 export interface JobsParams {
@@ -75,6 +85,12 @@ export interface RecruitmentEvent {
   jobs?: Job[]
   registrationDeadline?: string
   status: 'upcoming' | 'ongoing' | 'past'
+  // Rekrutmen offline: pengumuman aslinya di Instagram, di-embed pada halaman detail.
+  instagramUrl?: string
+  // Posisi yang dibuka, disalin dari poster (event offline belum punya API loker).
+  positions?: string[]
+  // Link pendaftaran eksternal (bit.ly) dari poster.
+  registrationLinks?: { label: string; url: string }[]
 }
 
 export interface EventsResponse {

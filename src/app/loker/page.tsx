@@ -45,7 +45,7 @@ export default async function LokerPage({ searchParams }: PageProps) {
   const experience = params.experience ?? ''
   const jobId = params.jobId ?? ''
 
-  const [{ jobs, total }, categories, locations, tipeKerja, selectedJob] = await Promise.all([
+  const [{ jobs, total, appliedKeyword, appliedLocationName, relaxed }, categories, locations, tipeKerja, selectedJob] = await Promise.all([
     fetchJobs({ page, perPage: PER_PAGE, keyword, category, location, employmentType: tipe, salaryRange: salary, experienceLevel: experience }),
     fetchCategories(),
     fetchLocations(),
@@ -93,6 +93,9 @@ export default async function LokerPage({ searchParams }: PageProps) {
           initialExperience={experience}
           initialJobId={jobId}
           initialSelectedJob={selectedJob}
+          appliedKeyword={appliedKeyword}
+          appliedLocationName={appliedLocationName}
+          relaxed={relaxed}
         />
       </Suspense>
     </>

@@ -525,9 +525,21 @@ const getJenisKerja = cache(async (): Promise<TipeRef[]> => {
   return [...map.values()].sort((a, b) => b.count - a.count)
 })
 
+// jenis_kerja bebas teks: 46 varian lolos setelah digabung, tapi ekornya sampah
+// sekali-pakai ("-", "Remote work pada hari Minggu", "Full-time &amp; Part-time").
+// Ambang ini menyaringnya supaya daftar facet tetap berupa jenis kerja nyata —
+// penting karena diurut A–Z, kalau tidak justru sampah yang tampil paling atas.
+const TIPE_MIN_COUNT = 10
+
 export const getCdcTipeKerja = cache(async (): Promise<TipeKerja[]> => {
   const all = await getJenisKerja()
-  return all.filter((t) => t.count > 0).map(({ slug, name, count }) => ({ slug, name, count }))
+  const real = all.filter((t) => t.count >= TIPE_MIN_COUNT)
+  // Jangan pernah kembalikan kosong: kalau data terlalu sepi untuk memenuhi
+  // ambang, pakai apa pun yang ada agar filter tidak hilang sama sekali.
+  const list = real.length > 0 ? real : all.filter((t) => t.count > 0)
+  return list
+    .map(({ slug, name, count }) => ({ slug, name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'id'))
 })
 
 // ─── Loker queries ───────────────────────────────────────────────────────────────
@@ -621,6 +633,152 @@ export async function getCdcJobs(query: CdcJobsQuery = {}): Promise<CdcJobsResul
     page: res.meta?.page ?? page,
     perPage: res.meta?.per_page ?? perPage,
   }
+}
+
+// ─── Smart keyword search ────────────────────────────────────────────────────────
+//
+// API `q` hanya melakukan SATU pencocokan literal ke posisi/perusahaan, jadi
+// kueri multi-kata selalu nol hasil: "marketing semarang" → 0, padahal
+// "marketing" → 15.460 dan "semarang" → 655. Selain itu `q` TIDAK menyentuh
+// kolom wilayah — "semarang" hanya cocok kalau kebetulan ada di nama perusahaan.
+//
+// Strateginya: pecah kueri, kenali kata yang merupakan nama wilayah, lalu
+// jalankan kata posisi sebagai `q` DENGAN filter wilayah asli. Kalau kombinasi
+// itu kosong, turunkan syaratnya bertahap supaya user tetap dapat hasil relevan
+// alih-alih halaman kosong.
+
+/**
+ * Kata yang terlalu umum untuk dijadikan kata kunci pencarian.
+ *
+ * Penting: kata pengisi seperti "cari"/"butuh" TIDAK boleh lolos, karena
+ * kebetulan cocok di ratusan baris (q=cari → 301, q=butuh → 486). Kalau lolos,
+ * "cari guru jakarta" akan memakai "cari" sebagai posisi dan hasilnya melenceng.
+ */
+const STOPWORDS = new Set([
+  'di', 'dan', 'atau', 'untuk', 'kerja', 'lowongan', 'loker', 'kota', 'kab',
+  'kabupaten', 'daerah', 'wilayah', 'area', 'yang', 'the', 'in', 'at', 'job', 'jobs',
+  // Kata pengisi/ajakan — sering diketik user tapi bukan posisi.
+  // Catatan: "part"/"time"/"full" sengaja TIDAK di sini — itu jenis kerja yang
+  // valid untuk dicari, bukan kata pengisi.
+  'cari', 'mencari', 'dicari', 'butuh', 'dibutuhkan', 'membutuhkan', 'lamaran',
+  'melamar', 'saya', 'aku', 'ada', 'apa', 'tolong', 'mohon', 'info',
+  'sekitar', 'dekat', 'daftar',
+])
+
+function tokenize(keyword: string): string[] {
+  return keyword
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1 && !STOPWORDS.has(t))
+}
+
+/**
+ * Cari wilayah yang namanya memuat token tertentu.
+ * Mengembalikan entry dengan loker terbanyak supaya "semarang" memilih
+ * "Kota Semarang" (banyak loker) ketimbang wilayah mirip yang sepi.
+ */
+async function matchLocation(token: string): Promise<LocationRef | null> {
+  const all = await getWilayah()
+  let best: LocationRef | null = null
+  for (const l of all) {
+    if (l.count <= 0) continue
+    const name = l.name.toLowerCase()
+    // Cocok utuh sebagai kata, bukan substring — mencegah "bali" ikut
+    // mencocokkan "Balikpapan".
+    if (!new RegExp(`\\b${token}\\b`).test(name)) continue
+    if (!best || l.count > best.count) best = l
+  }
+  return best
+}
+
+export interface SmartSearchResult extends CdcJobsResult {
+  /** Istilah yang benar-benar dipakai, untuk ditampilkan ke user. */
+  appliedKeyword: string
+  /** Nama wilayah yang terdeteksi dari kueri (kalau ada). */
+  appliedLocationName?: string
+  /** True kalau syarat pencarian diturunkan agar tidak nol hasil. */
+  relaxed: boolean
+}
+
+/**
+ * Pencarian bertingkat untuk kueri bebas (mis. "marketing semarang").
+ *
+ * Urutan prioritas — berhenti di percobaan pertama yang berhasil:
+ *   1. posisi + wilayah   → "marketing" di Kota Semarang   (paling spesifik)
+ *   2. posisi saja        → "marketing" di mana pun         (posisi diprioritaskan)
+ *   3. wilayah saja       → semua loker di Kota Semarang
+ *   4. token lain satu-satu (mis. nama perusahaan)
+ */
+export async function searchCdcJobs(
+  query: CdcJobsQuery & { keyword: string },
+): Promise<SmartSearchResult> {
+  const tokens = tokenize(query.keyword)
+  const base = { ...query, keyword: undefined as string | undefined }
+
+  const run = async (q: string | undefined, locationSlug?: string) =>
+    getCdcJobs({ ...base, keyword: q, locationSlug: locationSlug ?? query.locationSlug })
+
+  // Kueri satu kata (atau kosong): tidak ada yang perlu dipecah.
+  if (tokens.length <= 1) {
+    const res = await getCdcJobs(query)
+    return { ...res, appliedKeyword: query.keyword, relaxed: false }
+  }
+
+  // Pisahkan token wilayah dari token posisi. Hanya lakukan kalau user belum
+  // memilih filter lokasi sendiri — pilihan eksplisit user tidak boleh ditimpa.
+  let locToken: string | null = null
+  let locRef: LocationRef | null = null
+  if (!query.locationSlug) {
+    for (const t of tokens) {
+      const hit = await matchLocation(t)
+      if (hit) { locToken = t; locRef = hit; break }
+    }
+  }
+  const posTokens = tokens.filter((t) => t !== locToken)
+  const posKeyword = posTokens.join(' ')
+
+  // 1. Posisi + wilayah — hasil paling relevan.
+  if (locRef && posTokens.length > 0) {
+    for (const t of posTokens) {
+      const res = await run(t, locRef.slug)
+      if (res.total > 0) {
+        return {
+          ...res,
+          appliedKeyword: t,
+          appliedLocationName: locRef.name,
+          // Ditandai relaxed kalau kata posisi lain ikut dibuang.
+          relaxed: t !== posKeyword,
+        }
+      }
+    }
+  }
+
+  // 2. Posisi saja — posisi lebih diprioritaskan daripada wilayah.
+  for (const t of posTokens) {
+    const res = await run(t)
+    if (res.total > 0) {
+      return { ...res, appliedKeyword: t, relaxed: true }
+    }
+  }
+
+  // 3. Wilayah saja.
+  if (locRef) {
+    const res = await run(undefined, locRef.slug)
+    if (res.total > 0) {
+      return { ...res, appliedKeyword: '', appliedLocationName: locRef.name, relaxed: true }
+    }
+  }
+
+  // 4. Token sisa (mis. nama perusahaan yang bukan posisi/wilayah).
+  for (const t of tokens) {
+    const res = await run(t)
+    if (res.total > 0) {
+      return { ...res, appliedKeyword: t, relaxed: true }
+    }
+  }
+
+  const empty = await run(query.keyword)
+  return { ...empty, appliedKeyword: query.keyword, relaxed: false }
 }
 
 /** Detail by numeric id — one row, no scanning. */

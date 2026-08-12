@@ -6,6 +6,9 @@ import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
+  // Logo memang menuju "/", tapi itu tidak jelas sebagai navigasi — terutama di
+  // menu mobile yang tidak menampilkan logo sama sekali.
+  { label: 'Beranda', href: '/' },
   { label: 'Cari Lowongan', href: '/loker' },
   { label: 'Kategori', href: '/kategori' },
   { label: 'Lokasi', href: '/daerah' },
