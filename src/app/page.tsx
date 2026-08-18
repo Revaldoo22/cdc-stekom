@@ -56,11 +56,11 @@ export default async function HomePage() {
           <div className="hidden lg:block absolute inset-y-0 right-0 w-[44%]">
             <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-primary to-transparent z-10" />
             <Image
-              src="/images/hero/hero.png"
+              src="/images/hero/hero.webp"
               alt="Mahasiswa siap berkarir bersama CDC Universitas Stekom"
               fill
               sizes="44vw"
-              quality={100}
+              quality={82}
               className="object-cover object-center brightness-[1.03] contrast-[1.08] saturate-[1.18] [image-rendering:high-quality]"
               priority
             />
