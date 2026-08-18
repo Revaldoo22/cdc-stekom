@@ -103,6 +103,24 @@ function AccordionGroup({ group, value, expanded, onToggle, onSelect }: Accordio
           {/* Daftar panjang dibatasi tingginya dan scroll sendiri, supaya grup
               lain tetap terjangkau tanpa scroll jauh. */}
           <div className={`flex flex-wrap gap-2 ${searchable ? 'max-h-56 overflow-y-auto overscroll-contain' : ''}`}>
+            {/* Chip "Semua" — cara eksplisit mengosongkan grup ini. Tanpa ini
+                satu-satunya jalan adalah tap ulang pilihan aktif, yang tidak
+                terlihat sebagai aksi. Disembunyikan saat mencari agar tidak
+                mengganggu daftar hasil. */}
+            {!q && (
+              <button
+                type="button"
+                aria-pressed={!value}
+                onClick={() => onSelect('')}
+                className={`rounded-full border px-3.5 py-2 text-[13px] transition-colors ${
+                  !value
+                    ? 'border-primary bg-primary font-semibold text-white'
+                    : 'border-border bg-white text-brand-muted hover:border-primary/50'
+                }`}
+              >
+                Semua
+              </button>
+            )}
             {matches.map((opt) => {
               const active = value === opt.value
               return (

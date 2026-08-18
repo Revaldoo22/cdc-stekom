@@ -45,14 +45,26 @@ function resolve(
   const locName  = location ? locations.find((l) => l.slug === location)?.name : undefined
   const tipeName = tipe ? tipeKerja.find((t) => t.slug === tipe)?.name : undefined
 
-  // A taxonomy slug present in the path but unknown in data is a 404.
-  if ((category && !catName) || (location && !locName) || (tipe && !tipeName)) return null
+  // Slug taksonomi yang tidak dikenal TIDAK langsung 404. Kata-katanya
+  // dipindahkan jadi keyword supaya pencarian bertingkat (searchCdcJobs) tetap
+  // bisa menampilkan loker yang relevan; halaman "tidak tersedia" hanya muncul
+  // kalau pencarian itu pun benar-benar nihil.
+  const unknown = [
+    category && !catName ? category : '',
+    location && !locName ? location : '',
+    tipe && !tipeName ? tipe : '',
+  ].filter(Boolean)
+
+  const keywordParts = [f.keyword ? deslugify(f.keyword) : '', ...unknown.map(deslugify)]
+    .filter(Boolean)
 
   return {
-    keyword: f.keyword ? deslugify(f.keyword) : '',
-    category, catName,
-    location, locName,
-    tipe, tipeName,
+    keyword: keywordParts.join(' '),
+    // Slug yang tidak dikenal dibuang dari filter — kalau tetap dikirim ke API,
+    // hasilnya dijamin kosong (slug itu tidak ada di data).
+    category: catName ? category : '', catName,
+    location: locName ? location : '', locName,
+    tipe: tipeName ? tipe : '', tipeName,
   }
 }
 

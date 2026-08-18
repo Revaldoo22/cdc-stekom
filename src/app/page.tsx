@@ -167,7 +167,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-brand-text">Kategori Pekerjaan</h2>
-            <Button variant="ghost" render={<Link href="/loker" />} className="cursor-pointer text-primary gap-1">
+            <Button variant="ghost" render={<Link href="/kategori" />} className="cursor-pointer text-primary gap-1">
               Semua kategori <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
@@ -194,7 +194,7 @@ export default async function HomePage() {
               <h2 className="text-2xl font-bold text-brand-text">Loker di Kota Populer</h2>
             </div>
             <Link
-              href="/loker"
+              href="/daerah"
               className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               Lihat semua kota <ArrowRight className="h-3.5 w-3.5" />
@@ -215,7 +215,7 @@ export default async function HomePage() {
 
           <div className="mt-4 sm:hidden flex justify-center">
             <Link
-              href="/loker"
+              href="/daerah"
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               Lihat semua kota <ArrowRight className="h-3.5 w-3.5" />

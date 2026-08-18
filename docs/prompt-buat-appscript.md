@@ -27,6 +27,8 @@ UTM (`utm_source`, `utm_medium`, `utm_campaign`, dll) yang jumlah dan namanya di
 ```json
 { "formType": "job-application", "name": "Andi", "email": "andi@mail.com",
   "phone": "081234567890", "address": "Jl. Majapahit No. 605, Semarang",
+  "education": "d4-s1", "educationOther": "",
+  "graduationYear": "2024", "interestedKuliahKerja": "ya",
   "cvLink": "https://drive.google.com/...",
   "jobId": "https://cdc.stekom.ac.id/loker?jobId=1827124",
   "message": "Saya tertarik posisi ini" }

@@ -712,7 +712,16 @@ export interface SmartSearchResult extends CdcJobsResult {
 export async function searchCdcJobs(
   query: CdcJobsQuery & { keyword: string },
 ): Promise<SmartSearchResult> {
-  const tokens = tokenize(query.keyword)
+  let tokens = tokenize(query.keyword)
+  // Kalau SEMUA kata tersaring stopword (mis. "tidak ada" → 'ada' stopword),
+  // pakai kata mentahnya. Di kueri seperti itu kata-kata itulah isi pencarian,
+  // bukan sekadar pengisi kalimat.
+  const rawWords = query.keyword.toLowerCase().split(/[^a-z0-9]+/i).filter((w) => w.length > 1)
+  if (tokens.length === 0 && rawWords.length > 0) tokens = rawWords
+  else if (tokens.length < rawWords.length && tokens.length <= 1) {
+    // Sebagian tersaring: coba token bermakna dulu, sisanya jadi cadangan.
+    tokens = [...tokens, ...rawWords.filter((w) => !tokens.includes(w))]
+  }
   const base = { ...query, keyword: undefined as string | undefined }
 
   const run = async (q: string | undefined, locationSlug?: string) =>
@@ -721,7 +730,17 @@ export async function searchCdcJobs(
   // Kueri satu kata (atau kosong): tidak ada yang perlu dipecah.
   if (tokens.length <= 1) {
     const res = await getCdcJobs(query)
-    return { ...res, appliedKeyword: query.keyword, relaxed: false }
+    if (res.total > 0 || tokens.length === 0) {
+      return { ...res, appliedKeyword: query.keyword, relaxed: false }
+    }
+    // Nihil — coba tanpa filter taksonomi yang mungkin mempersempit hasil,
+    // sebelum menyerah ke halaman "tidak tersedia".
+    const loose = await getCdcJobs({ ...base, keyword: tokens[0] })
+    return {
+      ...loose,
+      appliedKeyword: tokens[0],
+      relaxed: loose.total > 0 && tokens[0] !== query.keyword,
+    }
   }
 
   // Pisahkan token wilayah dari token posisi. Hanya lakukan kalau user belum

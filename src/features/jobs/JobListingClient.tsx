@@ -54,12 +54,19 @@ interface FilterPillProps {
   value: string
   onChange: (v: string) => void
   dark?: boolean
+  /**
+   * Teks opsi "kosongkan filter" di puncak daftar, mis. "Semua Gaji".
+   * Beda dengan tombol "Hapus filter" yang hanya muncul saat filter aktif dan
+   * ikut hilang saat user mengetik pencarian — opsi ini selalu terlihat, jadi
+   * jalan keluarnya konsisten seperti dropdown Tanggal yang punya "Semua".
+   */
+  allLabel?: string
 }
 
 // Di atas ambang ini, dropdown pill dapat input pencarian.
 const PILL_SEARCH_THRESHOLD = 10
 
-function FilterPill({ label, icon, options, value, onChange, dark = false }: FilterPillProps) {
+function FilterPill({ label, icon, options, value, onChange, dark = false, allLabel }: FilterPillProps) {
   const [open, setOpen]       = useState(false)
   const [query, setQuery]     = useState('')
   const [rect, setRect]       = useState<DOMRect | null>(null)
@@ -139,6 +146,24 @@ function FilterPill({ label, icon, options, value, onChange, dark = false }: Fil
             )}
 
             <div className="max-h-80 overflow-y-auto overscroll-contain py-2">
+              {/* Opsi "Semua …" — selalu ada (kecuali saat mengetik pencarian,
+                  di mana daftar hasil yang relevan). Ini jalan keluar utama; tombol
+                  "Hapus filter" merah di bawahnya jadi penegas saat filter aktif. */}
+              {allLabel && !q && (
+                <button
+                  type="button"
+                  onClick={() => { onChange(''); close() }}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors cursor-pointer ${
+                    !active
+                      ? 'bg-primary/[0.07] text-primary font-semibold'
+                      : 'text-brand-muted hover:bg-slate-50 hover:text-brand-text'
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{allLabel}</span>
+                  {!active && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              )}
+              {allLabel && !q && <div className="my-1 border-t border-border" />}
               {active && !q && (
                 <button
                   type="button"
@@ -743,10 +768,10 @@ export function JobListingClient({
             </span>
             <span className="hidden h-4 w-px shrink-0 bg-white/15 lg:block" aria-hidden />
             <div className="hidden items-center gap-2 flex-1 overflow-x-auto scrollbar-none lg:flex">
-              <FilterPill dark label="Gaji"   icon={<BadgeDollarSign className="h-3.5 w-3.5" />} options={salaryOptions}   value={initialSalary}   onChange={(v) => updateParams({ salary: v })} />
-              <FilterPill dark label="Jenis"  icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     onChange={(v) => updateParams({ tipe: v })} />
-              <FilterPill dark label="Lokasi" icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} onChange={(v) => updateParams({ location: v })} />
-              <FilterPill dark label="Bidang"                                                    options={categoryOptions} value={initialCategory} onChange={(v) => updateParams({ category: v })} />
+              <FilterPill dark label="Gaji"   icon={<BadgeDollarSign className="h-3.5 w-3.5" />} options={salaryOptions}   value={initialSalary}   allLabel="Semua Gaji"   onChange={(v) => updateParams({ salary: v })} />
+              <FilterPill dark label="Jenis"  icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     allLabel="Semua Jenis"     onChange={(v) => updateParams({ tipe: v })} />
+              <FilterPill dark label="Lokasi" icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} allLabel="Semua Lokasi" onChange={(v) => updateParams({ location: v })} />
+              <FilterPill dark label="Bidang"                                                    options={categoryOptions} value={initialCategory} allLabel="Semua Bidang" onChange={(v) => updateParams({ category: v })} />
               {activeCount > 0 && (
                 <button
                   type="button"

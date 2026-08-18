@@ -24,7 +24,12 @@ yang dipakai melacak asal pengunjung. Kolom pertama setiap tab adalah `timestamp
 - **offline** (pendaftaran Rekrutmen Offline):
   `name`, `email`, `phone`, `eventId`.
 - **job-application** (lamaran lowongan):
-  `name`, `email`, `phone`, `address` (alamat pelamar), `cvLink` (URL),
+  `name`, `email`, `phone`, `address` (alamat pelamar),
+  `education` (isi: `sma-smk` / `d3` / `d4-s1` / `s2` / `s3` / `lainnya`),
+  `educationOther` (teks bebas, hanya terisi kalau `education` = `lainnya`),
+  `graduationYear` (4 digit, mis. `2024`),
+  `interestedKuliahKerja` (isi: `ya` / `tidak` — sama seperti tab vjf),
+  `cvLink` (URL, **wajib**),
   `jobId` (**URL loker penuh**, mis. `https://cdc.stekom.ac.id/loker?jobId=1827124`),
   `message` (boleh kosong).
 

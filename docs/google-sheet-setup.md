@@ -18,11 +18,20 @@ dan **menambah kolom otomatis** kalau ada field baru — jadi aman walau payload
 // Lamaran Loker (job-application)
 { "formType": "job-application", "name": "...", "email": "...", "phone": "...",
   "address": "Jl. Majapahit No. 605, Semarang",
-  "cvLink": "https://...",
+  "education": "sma-smk|d3|d4-s1|s2|s3|lainnya",
+  "educationOther": "Paket C",          // hanya terisi bila education = "lainnya"
+  "graduationYear": "2024",
+  "interestedKuliahKerja": "ya|tidak",
+  "cvLink": "https://...",              // WAJIB sejak form diperbarui
   "jobId": "https://cdc.stekom.ac.id/loker?jobId=1827124",   // link, bukan angka ID
   "message": "..." }
 ```
 
+> **Field baru tidak perlu ubah kode Apps Script.** Script di bawah menambah
+> kolom otomatis di ujung kanan saat menemukan key baru (`education`,
+> `educationOther`, `graduationYear`, `interestedKuliahKerja`), jadi sheet lama tetap aman —
+> baris lama hanya kosong di kolom baru itu. Tidak perlu re-deploy.
+>
 > **Catatan `jobId`**: sejak form dipakai tim rekrutmen langsung dari spreadsheet,
 > field ini dikirim sebagai **URL loker penuh** (`https://cdc.stekom.ac.id/loker?jobId=…`)
 > supaya selnya bisa langsung diklik. Nama field tetap `jobId` agar kolom sheet
@@ -37,7 +46,7 @@ submission pertama masuk. Tab yang akan dibuat:
 |-----|------------------------------------------------------------|
 | `vjf` | timestamp, name, email, phone, interestedKuliahKerja, eventId, utm_source, utm_medium, utm_campaign, … |
 | `offline` | timestamp, name, email, phone, eventId |
-| `job-application` | timestamp, name, email, phone, address, cvLink, jobId, message |
+| `job-application` | timestamp, name, email, phone, address, education, educationOther, graduationYear, interestedKuliahKerja, cvLink, jobId, message |
 
 Kolom `utm_*` baru muncul saat ada submission yang membawanya, dan ditambahkan
 di ujung kanan secara otomatis.
@@ -147,7 +156,7 @@ curl -X POST "<WEB_APP_URL>" -H "Content-Type: application/json" \
 
 ```bash
 curl -X POST "<WEB_APP_URL>" -H "Content-Type: application/json" \
-  -d '{"formType":"job-application","name":"Andi","email":"a@e.com","phone":"081234567890","address":"Jl. Majapahit No. 605, Semarang","cvLink":"https://drive.google.com/abc","jobId":"https://cdc.stekom.ac.id/loker?jobId=1827124","message":"Tes"}'
+  -d '{"formType":"job-application","name":"Andi","email":"a@e.com","phone":"081234567890","address":"Jl. Majapahit No. 605, Semarang","education":"d4-s1","graduationYear":"2024","interestedKuliahKerja":"ya","cvLink":"https://drive.google.com/abc","jobId":"https://cdc.stekom.ac.id/loker?jobId=1827124","message":"Tes"}'
 ```
 
 ## Catatan

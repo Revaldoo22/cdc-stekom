@@ -1,17 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Loader2, CheckCircle2, User, Mail, Phone, Link2, MessageSquare, Send,
-  ExternalLink, ArrowLeft, ArrowRight, MapPin,
+  ExternalLink, ArrowLeft, ArrowRight, MapPin, GraduationCap, CalendarDays,
 } from 'lucide-react'
 import { SITE_URL } from '@/config/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import { JobApplicationSchema, type JobApplicationData } from '@/lib/validators'
 import { submitForm } from '@/services/forms.service'
 
@@ -25,12 +28,35 @@ interface JobApplicationFormProps {
   onSuccess?: () => void
 }
 
-const STEPS = ['Data Diri', 'CV & Pesan'] as const
+// Pendidikan dipisah jadi langkah sendiri: menumpuk 3 field baru ke "Data Diri"
+// membuat satu layar dialog terlalu panjang untuk di-scan.
+const STEPS = ['Data Diri', 'Pendidikan', 'CV & Pesan'] as const
 // Fields validated before advancing past each step.
 const STEP_FIELDS: (keyof JobApplicationData)[][] = [
   ['name', 'email', 'phone', 'address'],
+  ['education', 'educationOther', 'graduationYear', 'interestedKuliahKerja'],
   ['cvLink', 'message'],
 ]
+
+const EDUCATION_OPTIONS = [
+  { value: 'sma-smk', label: 'SMA / SMK / MA / Sederajat' },
+  { value: 'd3',      label: 'D3' },
+  { value: 'd4-s1',   label: 'D4 / S1' },
+  { value: 's2',      label: 'S2' },
+  { value: 's3',      label: 'S3' },
+  { value: 'lainnya', label: 'Lainnya' },
+] as const
+
+// Ubah "https://wa.me/628123456789?text=..." jadi "+62 812 345 6789" agar
+// nomornya bisa dibaca/disalin kalau popup WhatsApp diblokir browser.
+function formatWaNumber(waUrl: string): string {
+  const digits = waUrl.replace(/^https?:\/\/wa\.me\//i, '').split('?')[0].replace(/\D/g, '')
+  if (!digits) return waUrl
+  // Kelompokkan setelah kode negara supaya tidak jadi deretan angka panjang.
+  const rest = digits.startsWith('62') ? digits.slice(2) : digits
+  const cc = digits.startsWith('62') ? '+62 ' : '+'
+  return cc + (rest.match(/.{1,4}/g)?.join(' ') ?? rest)
+}
 
 // Kolom "job id" di sheet diisi link loker yang bisa langsung diklik, bukan
 // angka mentah — supaya tim rekrutmen tinggal klik dari spreadsheet.
@@ -45,6 +71,9 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
   const [handoff, setHandoff] = useState<{ kind: 'wa' | 'email'; url: string } | null>(null)
   const {
     register,
+    control,
+    watch,
+    setValue,
     handleSubmit,
     trigger,
     formState: { errors, isSubmitting },
@@ -53,6 +82,9 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
     defaultValues: { jobId: jobLink(jobId) },
     mode: 'onTouched',
   })
+
+  // Input manual pendidikan hanya muncul saat opsi "Lainnya" dipilih.
+  const isOtherEducation = watch('education') === 'lainnya'
 
   const isLastStep = step === STEPS.length - 1
   // The Lanjut and Kirim buttons share the same slot. After advancing, the submit
@@ -94,7 +126,13 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
         email: data.email,
         phone: data.phone,
         address: data.address,
-        cvLink: data.cvLink ?? '',
+        education: data.education,
+        // Kolom terpisah supaya nilai "lainnya" tetap bisa difilter, tapi
+        // keterangan manualnya tidak hilang.
+        educationOther: data.educationOther?.trim() ?? '',
+        graduationYear: data.graduationYear,
+        interestedKuliahKerja: data.interestedKuliahKerja,
+        cvLink: data.cvLink,
         jobId: data.jobId,
         message: data.message ?? '',
       },
@@ -107,6 +145,14 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
       `Telepon: ${data.phone}`,
       `Email: ${data.email}`,
       `Alamat: ${data.address}`,
+      // Untuk "lainnya", tampilkan yang ditulis user — label "Lainnya" tidak
+      // memberi informasi apa pun ke rekruter.
+      `Pendidikan terakhir: ${
+        data.education === 'lainnya' && data.educationOther?.trim()
+          ? data.educationOther.trim()
+          : EDUCATION_OPTIONS.find((o) => o.value === data.education)?.label ?? data.education
+      }`,
+      `Tahun lulus: ${data.graduationYear}`,
     ]
     if (data.cvLink) lines.push(`Link CV: ${data.cvLink}`)
     if (data.message) lines.push('', `Pesan: ${data.message}`)
@@ -140,11 +186,24 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
         </span>
         <div>
           <h3 className="text-lg font-bold text-brand-text">Lamaran Terkirim!</h3>
-          {handoff ? (
+          {/* WhatsApp/email sudah dibuka otomatis saat submit, jadi teksnya
+              menjelaskan apa yang SUDAH terjadi + sisa 1 aksi (tekan Kirim),
+              bukan menyuruh user memulai langkah yang sudah jalan. */}
+          {handoff?.kind === 'wa' ? (
             <p className="mt-1 text-sm text-brand-muted">
-              Satu langkah lagi — lanjutkan ke{' '}
-              {handoff.kind === 'wa' ? 'WhatsApp' : 'email'} perusahaan untuk mengirim
-              lamaran <strong className="text-brand-text">{jobTitle}</strong>.
+              Data Anda tersimpan dan{' '}
+              <strong className="text-brand-text">WhatsApp sudah dibuka</strong> dengan
+              pesan lamaran <strong className="text-brand-text">{jobTitle}</strong> yang
+              siap dikirim. Tinggal tekan <strong className="text-brand-text">Kirim</strong>{' '}
+              di WhatsApp.
+            </p>
+          ) : handoff?.kind === 'email' ? (
+            <p className="mt-1 text-sm text-brand-muted">
+              Data Anda tersimpan dan{' '}
+              <strong className="text-brand-text">aplikasi email sudah dibuka</strong> dengan
+              draf lamaran <strong className="text-brand-text">{jobTitle}</strong> yang
+              siap dikirim. Tinggal tekan{' '}
+              <strong className="text-brand-text">Kirim</strong> di aplikasi email.
             </p>
           ) : (
             <p className="mt-1 text-sm text-brand-muted">
@@ -163,10 +222,19 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
               }
               className="w-full cursor-pointer bg-cta hover:bg-cta-dark text-white"
             >
-              {handoff.kind === 'wa' ? 'Lanjut ke WhatsApp' : 'Buka Aplikasi Email'}
+              {handoff.kind === 'wa' ? 'Buka WhatsApp Lagi' : 'Buka Aplikasi Email Lagi'}
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
-            {handoff.kind === 'email' && (
+            {handoff.kind === 'wa' ? (
+              // window.open sering diblokir popup blocker — tampilkan nomornya
+              // supaya pelamar tetap bisa menghubungi manual.
+              <p className="text-xs text-brand-muted">
+                Tidak terbuka otomatis? Hubungi manual ke{' '}
+                <strong className="text-brand-text">
+                  {formatWaNumber(handoff.url)}
+                </strong>
+              </p>
+            ) : (
               // Webmail-only user tidak punya klien email default, jadi mailto:
               // bisa tidak melakukan apa pun — tampilkan alamatnya agar bisa disalin.
               <p className="text-xs text-brand-muted">
@@ -224,10 +292,103 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
         </div>
       )}
 
-      {/* Step 2: CV & pesan */}
+      {/* Step 2: Pendidikan */}
       {step === 1 && (
         <div key="step-1" className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-200">
-          <Field id="app-cv" label="Link CV / Portfolio" optional icon={Link2} error={errors.cvLink?.message}>
+          <div className="space-y-1.5">
+            <Label htmlFor="app-education" className="text-[13px] font-semibold text-brand-text">
+              Pendidikan Terakhir <span className="text-cta">*</span>
+            </Label>
+            <Controller
+              control={control}
+              name="education"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ''}
+                  onValueChange={(v) => {
+                    field.onChange(v)
+                    // Bersihkan keterangan manual saat pindah dari "Lainnya",
+                    // supaya teks lama tidak ikut terkirim diam-diam.
+                    if (v !== 'lainnya') setValue('educationOther', '')
+                  }}
+                >
+                  <SelectTrigger id="app-education" className="w-full" aria-invalid={!!errors.education}>
+                    <SelectValue placeholder="Pilih pendidikan terakhir" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EDUCATION_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.education && (
+              <p role="alert" className="text-xs text-destructive">{errors.education.message}</p>
+            )}
+          </div>
+
+          {isOtherEducation && (
+            <Field
+              id="app-education-other"
+              label="Tuliskan Pendidikan Terakhir"
+              required
+              icon={GraduationCap}
+              error={errors.educationOther?.message}
+            >
+              <Input
+                id="app-education-other"
+                {...register('educationOther')}
+                placeholder="Contoh: Paket C, D1, Pondok Pesantren"
+                aria-invalid={!!errors.educationOther}
+                className="pl-9"
+              />
+            </Field>
+          )}
+
+          <Field id="app-gradyear" label="Tahun Lulus" required icon={CalendarDays} error={errors.graduationYear?.message}>
+            <Input
+              id="app-gradyear"
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              {...register('graduationYear')}
+              placeholder="2024"
+              aria-invalid={!!errors.graduationYear}
+              className="pl-9"
+            />
+          </Field>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="app-kuliahkerja" className="text-[13px] font-semibold text-brand-text">
+              Minat kuliah sambil bekerja? <span className="text-cta">*</span>
+            </Label>
+            <Controller
+              control={control}
+              name="interestedKuliahKerja"
+              render={({ field }) => (
+                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                  <SelectTrigger id="app-kuliahkerja" className="w-full" aria-invalid={!!errors.interestedKuliahKerja}>
+                    <SelectValue placeholder="Pilih jawaban" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ya">Ya, tertarik</SelectItem>
+                    <SelectItem value="tidak">Tidak</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.interestedKuliahKerja && (
+              <p role="alert" className="text-xs text-destructive">{errors.interestedKuliahKerja.message}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: CV & pesan */}
+      {step === 2 && (
+        <div key="step-2" className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-200">
+          <Field id="app-cv" label="Link CV / Portfolio" required icon={Link2} error={errors.cvLink?.message}>
             <Input
               id="app-cv"
               type="url"
@@ -300,8 +461,14 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
           </Button>
         ) : (
           <Button type="submit" disabled={isSubmitting || !armed} className="h-11 flex-1 cursor-pointer bg-cta font-semibold text-white hover:bg-cta-dark">
+            {/* Sebutkan tujuannya di tombol: submit langsung membuka WhatsApp /
+                email, jadi jangan sampai terasa seperti kejutan. */}
             {isSubmitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />Mengirim...</>
+            ) : whatsappUrl ? (
+              <><Send className="mr-2 h-4 w-4" aria-hidden="true" />Kirim &amp; Lanjut ke WhatsApp</>
+            ) : emailUrl ? (
+              <><Send className="mr-2 h-4 w-4" aria-hidden="true" />Kirim &amp; Buka Email</>
             ) : (
               <><Send className="mr-2 h-4 w-4" aria-hidden="true" />Kirim Lamaran</>
             )}

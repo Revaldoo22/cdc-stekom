@@ -88,8 +88,8 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Tujuannya WhatsApp, bukan halaman — pakai <a> biasa dan sebut
-              kanalnya di label supaya user tidak terkejut saat WA terbuka. */}
+          {/* Tujuannya WhatsApp, bukan halaman — pakai <a> biasa. Ikon WA yang
+              menandai kanalnya supaya user tidak terkejut saat WhatsApp terbuka. */}
           <a
             href={PARTNER_WA_URL}
             target="_blank"
@@ -97,7 +97,7 @@ export function Navbar() {
             className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-primary/90 cursor-pointer"
           >
             <WhatsAppIcon className="h-3.5 w-3.5" />
-            Pasang Loker
+            Untuk Perusahaan
           </a>
 
           {/* Mobile hamburger */}
@@ -142,10 +142,10 @@ export function Navbar() {
                 className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 <WhatsAppIcon className="h-4 w-4" />
-                Pasang Loker
+                Untuk Perusahaan
               </a>
               <p className="mt-2 text-center text-xs text-brand-muted">
-                Untuk perusahaan — hubungi CDC via WhatsApp
+                Pasang loker / kerja sama — hubungi CDC via WhatsApp
               </p>
             </div>
           </nav>
