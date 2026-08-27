@@ -223,10 +223,11 @@ export function HeroSearch({ locations, categories }: Props) {
       onSubmit={handleSearch}
       className="flex flex-col sm:flex-row bg-white rounded-2xl shadow-lg border border-white/20"
     >
-      {/* Keyword dapat porsi tiga kali dropdown: isinya nama posisi panjang
-          ("Business Development") yang tampil utuh, sementara dropdown hanya
-          memuat label pendek satu kata. */}
-      <label className="relative flex flex-3 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
+      {/* Keyword dapat porsi dua kali dropdown: isinya nama posisi panjang
+          ("Business Development"), sementara dropdown hanya memuat label satu
+          kata. Ruang sisa mengalir ke sini, tapi tidak sampai menggencet
+          dropdown di bawah lebar minimumnya. */}
+      <label className="relative flex flex-2 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
         <Search className="h-4.5 w-4.5 text-primary shrink-0" aria-hidden="true" />
         <div className="relative flex-1 min-w-0">
           <input
@@ -254,11 +255,12 @@ export function HeroSearch({ locations, categories }: Props) {
         </div>
       </label>
 
-      {/* Location */}
-      <div className="flex-1 min-w-0 px-4 border-b sm:border-b-0 sm:border-r border-border">
-        {/* Placeholder sependek mungkin: kolomnya sempit, dan "Semua Kota"
-            terpotong jadi "Semua …" — justru membuang kata yang informatif.
-            Opsi "semua" di dalam panel tetap memakai label lengkap. */}
+      {/* Location — sm:min-w-36 menjamin ikon + label + panah selalu muat.
+          Dengan min-w-0 kolom ini bisa menyusut tanpa batas saat kolom kata
+          kunci melebar, dan "Bidang" pun terpotong jadi "Bida…". */}
+      <div className="flex-1 min-w-0 sm:min-w-36 px-4 border-b sm:border-b-0 sm:border-r border-border">
+        {/* Placeholder sependek mungkin; opsi "semua" di dalam panel tetap
+            memakai label lengkap lewat allLabel. */}
         <DropdownSelect
           options={locationOptions}
           value={location}
@@ -271,7 +273,7 @@ export function HeroSearch({ locations, categories }: Props) {
       </div>
 
       {/* Category */}
-      <div className="flex-1 min-w-0 px-4">
+      <div className="flex-1 min-w-0 sm:min-w-36 px-4">
         <DropdownSelect
           options={categoryOptions}
           value={category}
