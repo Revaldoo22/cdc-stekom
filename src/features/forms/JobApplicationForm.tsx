@@ -25,6 +25,12 @@ interface JobApplicationFormProps {
   whatsappUrl?: string
   /** `mailto:` loker yang hanya menyediakan email — diperlakukan seperti WhatsApp. */
   emailUrl?: string
+  /**
+   * Situs lamaran perusahaan. Sama seperti dua jalur di atas, form tetap diisi
+   * lebih dulu supaya pelamarnya tercatat; bedanya pesan lamaran tidak bisa
+   * dibawa ke tujuan, jadi situsnya hanya dibuka setelah data tersimpan.
+   */
+  webUrl?: string
   onSuccess?: () => void
 }
 
@@ -64,11 +70,11 @@ function jobLink(jobId: string) {
   return `${SITE_URL}/loker?jobId=${encodeURIComponent(jobId)}`
 }
 
-export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emailUrl, onSuccess }: JobApplicationFormProps) {
+export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emailUrl, webUrl, onSuccess }: JobApplicationFormProps) {
   const [step, setStep] = useState(0)
   const [success, setSuccess] = useState(false)
-  // Tautan lanjutan setelah form terkirim: WhatsApp atau email perusahaan.
-  const [handoff, setHandoff] = useState<{ kind: 'wa' | 'email'; url: string } | null>(null)
+  // Tautan lanjutan setelah form terkirim: WhatsApp, email, atau situs perusahaan.
+  const [handoff, setHandoff] = useState<{ kind: 'wa' | 'email' | 'web'; url: string } | null>(null)
   const {
     register,
     control,
@@ -182,6 +188,12 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
       // Jangan pakai window.open untuk mailto: sebagian browser meninggalkan
       // tab kosong. assign() menyerahkan ke klien email tanpa efek itu.
       window.location.assign(link)
+    } else if (webUrl) {
+      // Situs perusahaan tidak bisa menerima pesan lamaran seperti WhatsApp/email,
+      // jadi `body` di atas tidak dipakai di sini — pelamar mengisi ulang di form
+      // milik perusahaan. Yang penting datanya sudah tercatat lebih dulu.
+      setHandoff({ kind: 'web', url: webUrl })
+      window.open(webUrl, '_blank', 'noopener,noreferrer')
     }
     setSuccess(true)
     onSuccess?.()
@@ -214,6 +226,16 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
               siap dikirim. Tinggal tekan{' '}
               <strong className="text-brand-text">Kirim</strong> di aplikasi email.
             </p>
+          ) : handoff?.kind === 'web' ? (
+            // Jangan bilang "lamaran terkirim" di jalur ini: perusahaan belum
+            // menerima apa pun sampai pelamar menyelesaikan form di situs mereka.
+            <p className="mt-1 text-sm text-brand-muted">
+              Data Anda tersimpan dan{' '}
+              <strong className="text-brand-text">situs lamaran perusahaan sudah dibuka</strong>{' '}
+              di tab baru. Lanjutkan pendaftaran{' '}
+              <strong className="text-brand-text">{jobTitle}</strong> di situs tersebut untuk
+              menyelesaikan lamaran Anda.
+            </p>
           ) : (
             <p className="mt-1 text-sm text-brand-muted">
               Lamaran Anda untuk posisi <strong className="text-brand-text">{jobTitle}</strong> telah
@@ -225,13 +247,19 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
           <>
             <Button
               render={
-                handoff.kind === 'wa'
-                  ? <a href={handoff.url} target="_blank" rel="noopener noreferrer" />
-                  : <a href={handoff.url} />
+                // mailto: sengaja tanpa target=_blank — sebagian browser
+                // meninggalkan tab kosong. Dua jalur lainnya membuka tab baru.
+                handoff.kind === 'email'
+                  ? <a href={handoff.url} />
+                  : <a href={handoff.url} target="_blank" rel="noopener noreferrer" />
               }
               className="w-full cursor-pointer bg-cta hover:bg-cta-dark text-white"
             >
-              {handoff.kind === 'wa' ? 'Buka WhatsApp Lagi' : 'Buka Aplikasi Email Lagi'}
+              {handoff.kind === 'wa'
+                ? 'Buka WhatsApp Lagi'
+                : handoff.kind === 'email'
+                  ? 'Buka Aplikasi Email Lagi'
+                  : 'Buka Situs Lamaran Lagi'}
               <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             {handoff.kind === 'wa' ? (
