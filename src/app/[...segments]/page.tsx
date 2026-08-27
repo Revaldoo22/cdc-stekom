@@ -199,7 +199,7 @@ async function ListingContent({
   const experience = sp.experience ?? ''
   const jobId      = sp.jobId ?? ''
 
-  const [{ jobs, total, appliedKeyword, appliedLocationName, relaxed }, selectedJob] = await Promise.all([
+  const [{ jobs, total }, selectedJob] = await Promise.all([
     fetchJobs({
       page, perPage: PER_PAGE, keyword: r.keyword,
       category: r.category, location: r.location, employmentType: r.tipe,
@@ -233,9 +233,6 @@ async function ListingContent({
         initialExperience={experience}
         initialJobId={jobId}
         initialSelectedJob={selectedJob}
-        appliedKeyword={appliedKeyword}
-        appliedLocationName={appliedLocationName}
-        relaxed={relaxed}
       />
     </>
   )

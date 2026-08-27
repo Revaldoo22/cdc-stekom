@@ -585,10 +585,6 @@ interface JobListingClientProps {
   initialExperience: string
   initialJobId?: string
   initialSelectedJob?: Job | null
-  /** Istilah yang benar-benar dipakai server (kueri multi-kata dipecah). */
-  appliedKeyword?: string
-  appliedLocationName?: string
-  relaxed?: boolean
 }
 
 export function JobListingClient({
@@ -596,7 +592,6 @@ export function JobListingClient({
   initialPage, initialKeyword, initialCategory,
   initialLocation, initialTipe, initialSalary, initialExperience,
   initialJobId = '', initialSelectedJob = null,
-  appliedKeyword, appliedLocationName, relaxed = false,
 }: JobListingClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -829,20 +824,6 @@ export function JobListingClient({
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
         <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
-          {/* Kueri multi-kata dipecah oleh server (API hanya cocokkan 1 istilah
-              literal). Beri tahu user istilah mana yang akhirnya dipakai supaya
-              hasil yang "tidak persis" tidak terasa seperti bug. */}
-          {!isPending && relaxed && jobs.length > 0 && (
-            <p className="border-b border-border/60 bg-amber-50 px-5 py-3 text-xs leading-relaxed text-amber-900">
-              Tidak ada hasil yang cocok persis untuk{' '}
-              <strong className="font-semibold">&ldquo;{initialKeyword}&rdquo;</strong>.
-              Menampilkan lowongan
-              {appliedKeyword && <> untuk <strong className="font-semibold">{appliedKeyword}</strong></>}
-              {appliedLocationName && <> di <strong className="font-semibold">{appliedLocationName}</strong></>}
-              .
-            </p>
-          )}
-
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
           ) : jobs.length === 0 ? (
