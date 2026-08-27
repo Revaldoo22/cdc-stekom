@@ -46,6 +46,12 @@ export default async function HomePage() {
   const offlineEvents = events.filter((e) => e.type === 'offline')
   const vjfEvents = events.filter((e) => e.type === 'vjf')
 
+  // "Lainnya" adalah keranjang sisa terbesar di API (272rb dari 579rb baris) —
+  // sebagai kartu ia hanya mengambil tempat tanpa memberi tahu isinya apa.
+  // Sisanya pas 18 kategori, tepat tiga baris penuh di grid enam kolom.
+  // fetchCategories() sudah mengurutkan menurun berdasarkan jumlah loker.
+  const homeCategories = categories.filter((c) => c.slug !== 'lainnya').slice(0, 18)
+
   return (
     <>
       {/* ── Hero Search ── */}
@@ -172,7 +178,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map((cat) => (
+            {homeCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={seoUrl.category(cat.slug)}
