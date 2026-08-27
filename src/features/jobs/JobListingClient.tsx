@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation'
 import {
   Search, MapPin, X, ChevronDown, Building2, BadgeDollarSign,
   Briefcase, Clock, CheckCircle2, Wrench, ArrowUpRight,
-  Bookmark, BookmarkCheck, SlidersHorizontal,
+  Bookmark, BookmarkCheck, SlidersHorizontal, Calendar,
 } from 'lucide-react'
 import type { Job, Category, Location, TipeKerja } from '@/types'
-import { SALARY_RANGES, EXPERIENCE_LEVELS } from '@/config/filters'
+import { SALARY_RANGES } from '@/config/filters'
 import { buildJobsUrl } from '@/lib/seo-urls'
 import { useSavedJobs } from '@/hooks/useSavedJobs'
 import { NoResults } from '@/components/shared/NoResults'
@@ -21,13 +21,19 @@ import { PER_PAGE } from '@/config/api'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function relativeTime(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000)
-  if (days === 0) return 'Hari ini'
-  if (days === 1) return 'Kemarin'
-  if (days < 7)  return `${days} hari lalu`
-  if (days < 30) return `${Math.floor(days / 7)} minggu lalu`
-  return `${Math.floor(days / 30)} bulan lalu`
+function relativeTime(dateStr?: string): string {
+  // Zero-dated rows arrive as undefined — see cleanDate() in cdc-loker.service.
+  if (!dateStr) return 'Tanggal tidak tertera'
+  const d = new Date(dateStr)
+  const posted = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+  const now = new Date()
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.floor((today - posted) / 86_400_000)
+  if (days <= 0) return 'Baru'
+  if (days < 7) return `${days} hari yang lalu`
+  if (days < 30) return `${Math.floor(days / 7)} minggu yang lalu`
+  if (days < 365) return `${Math.floor(days / 30)} bulan yang lalu`
+  return `${Math.floor(days / 365)} tahun yang lalu`
 }
 
 const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
@@ -405,18 +411,21 @@ function JobDetailPanel({ job }: { job: Job }) {
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-2 mb-5">
             {[
-              { icon: <MapPin className="h-3.5 w-3.5 text-primary" />,          label: job.location        },
-              { icon: <Briefcase className="h-3.5 w-3.5 text-primary" />,       label: job.employmentType  },
-              job.salary
-                ? { icon: <BadgeDollarSign className="h-3.5 w-3.5 text-primary" />, label: job.salary }
-                : null,
-              job.experienceLevel
-                ? { icon: <Clock className="h-3.5 w-3.5 text-primary" />, label: EXPERIENCE_LABEL[job.experienceLevel] ?? job.experienceLevel }
-                : null,
-            ].filter(Boolean).map((item, i) => (
+              { icon: <MapPin className="h-3.5 w-3.5 text-primary" />,          label: job.location || 'Lokasi tidak tertera' },
+              { icon: <Briefcase className="h-3.5 w-3.5 text-primary" />,       label: job.employmentType || 'Tipe kerja tidak tertera' },
+              { icon: <BadgeDollarSign className="h-3.5 w-3.5 text-primary" />, label: job.salary || 'Gaji tidak tertera' },
+              // Only shown when present — the live API never sets it, so a
+              // permanent "Pengalaman tidak tertera" tile was pure noise.
+              ...(job.experienceLevel
+                ? [{ icon: <Clock className="h-3.5 w-3.5 text-primary" />, label: EXPERIENCE_LABEL[job.experienceLevel] ?? job.experienceLevel }]
+                : []),
+              { icon: <Calendar className="h-3.5 w-3.5 text-primary" />, label: job.postedAt
+                  ? `Diposting ${new Date(job.postedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                  : 'Tanggal tidak tertera' },
+            ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 rounded-xl border border-border/60 bg-slate-50 px-3 py-2.5">
-                {item!.icon}
-                <span className="text-[12.5px] font-medium text-brand-text truncate">{item!.label}</span>
+                {item.icon}
+                <span className="text-[12.5px] font-medium text-brand-text truncate">{item.label}</span>
               </div>
             ))}
           </div>
@@ -626,9 +635,25 @@ export function JobListingClient({
       salary:     initialSalary,
       experience: initialExperience,
       keyword:    initialKeyword,
+      // selectedId, not initialJobId — it tracks the panel the user actually has
+      // open, so filtering or paging keeps that listing visible instead of
+      // dropping back to the empty "Pilih lowongan kerja" placeholder.
+      jobId:      selectedId,
     }),
-    [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience, initialKeyword],
+    [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience, initialKeyword, selectedId],
   )
+
+  // Arriving from another page (mis. "Lihat semua" di beranda) must land at the
+  // top. The Suspense fallback wrapping this component is only h-64 tall, so the
+  // browser restores/keeps a scroll offset against that short page and ends up
+  // mid-listing once the real content expands it. Back/forward is left alone —
+  // there the restored position is the wanted behaviour.
+  useEffect(() => {
+    const isRestore =
+      typeof window !== 'undefined' &&
+      (window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)?.type === 'back_forward'
+    if (!isRestore) window.scrollTo(0, 0)
+  }, [])
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
@@ -656,10 +681,9 @@ export function JobListingClient({
     [router, currentFilter],
   )
 
-  // Gaji & pengalaman TIDAK diurut A–Z: urutan aslinya sudah bermakna
-  // (rendah→tinggi), mengurut alfabetis justru mengacaukannya.
+  // Gaji TIDAK diurut A–Z: urutan aslinya sudah bermakna (rendah→tinggi),
+  // mengurut alfabetis justru mengacaukannya.
   const salaryOptions     = SALARY_RANGES.map((r) => ({ value: r.slug, label: r.label }))
-  const experienceOptions = EXPERIENCE_LEVELS.map((e) => ({ value: e.slug, label: e.label }))
   const tipeOptions       = tipeKerja.map((t) => ({ value: t.slug, label: t.name }))
   // Lokasi & bidang diurut A–Z — daftarnya panjang (~320 & ~19), jadi urutan
   // alfabetis jauh lebih mudah dipindai daripada urutan jumlah loker.
@@ -672,13 +696,23 @@ export function JobListingClient({
     .map((c) => ({ value: c.slug, label: c.name }))
     .sort(byName)
 
+  // Two counts, because they answer different questions. The mobile sheet badge
+  // may only count what the sheet itself can change; Reset also clears the
+  // keyword, so it must count that too — otherwise searching without any filter
+  // left no way to clear the search, and "Reset (2)" silently cleared 3 things.
   const activeCount = [initialCategory, initialLocation, initialTipe, initialSalary, initialExperience].filter(Boolean).length
+  const resetCount  = activeCount + (initialKeyword ? 1 : 0)
 
   // Bottom sheet mobile. Key harus sama dengan nama param di updateParams.
+  //
+  // "Level Pengalaman" is deliberately absent: the API exposes no query param for
+  // it and mapLoker never populates job.experienceLevel, so selecting it lit up
+  // the pill and changed nothing. An existing ?experience= in a shared URL is
+  // still accepted and passed through — only the control is hidden. Restore this
+  // group once the backend normalises its free-text `pengalaman` column.
   const sheetGroups: FilterGroup[] = [
     { key: 'salary',     label: 'Kisaran Gaji',     options: salaryOptions },
     { key: 'tipe',       label: 'Jenis Pekerjaan',  options: tipeOptions },
-    { key: 'experience', label: 'Level Pengalaman', options: experienceOptions },
     { key: 'location',   label: 'Lokasi',           options: locationOptions },
     { key: 'category',   label: 'Bidang',           options: categoryOptions },
   ]
@@ -772,14 +806,14 @@ export function JobListingClient({
               <FilterPill dark label="Jenis"  icon={<Briefcase className="h-3.5 w-3.5" />}       options={tipeOptions}     value={initialTipe}     allLabel="Semua Jenis"     onChange={(v) => updateParams({ tipe: v })} />
               <FilterPill dark label="Lokasi" icon={<MapPin className="h-3.5 w-3.5" />}          options={locationOptions} value={initialLocation} allLabel="Semua Lokasi" onChange={(v) => updateParams({ location: v })} />
               <FilterPill dark label="Bidang"                                                    options={categoryOptions} value={initialCategory} allLabel="Semua Bidang" onChange={(v) => updateParams({ category: v })} />
-              {activeCount > 0 && (
+              {resetCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => startTransition(() => router.push('/loker'))}
+                  onClick={() => { setKeyword(''); startTransition(() => router.push('/loker')) }}
                   className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <X className="h-3 w-3" />
-                  Reset ({activeCount})
+                  Reset ({resetCount})
                 </button>
               )}
             </div>

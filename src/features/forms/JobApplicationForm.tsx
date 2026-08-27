@@ -119,24 +119,33 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
       if (!isLastStep) void next()
       return
     }
-    await submitForm({
-      formType: 'job-application',
-      data: {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        education: data.education,
-        // Kolom terpisah supaya nilai "lainnya" tetap bisa difilter, tapi
-        // keterangan manualnya tidak hilang.
-        educationOther: data.educationOther?.trim() ?? '',
-        graduationYear: data.graduationYear,
-        interestedKuliahKerja: data.interestedKuliahKerja,
-        cvLink: data.cvLink,
-        jobId: data.jobId,
-        message: data.message ?? '',
-      },
-    })
+    // Perekaman ke spreadsheet TIDAK boleh memblokir lamaran. Kalau webhook
+    // Apps Script sedang down, sebelumnya submitForm melempar dan menghentikan
+    // seluruh fungsi: WhatsApp tak pernah terbuka dan user hanya melihat form
+    // diam tanpa pesan apa pun — lamarannya hilang begitu saja. Kegagalannya
+    // dicatat ke konsol, lalu alur handoff diteruskan.
+    try {
+      await submitForm({
+        formType: 'job-application',
+        data: {
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          education: data.education,
+          // Kolom terpisah supaya nilai "lainnya" tetap bisa difilter, tapi
+          // keterangan manualnya tidak hilang.
+          educationOther: data.educationOther?.trim() ?? '',
+          graduationYear: data.graduationYear,
+          interestedKuliahKerja: data.interestedKuliahKerja,
+          cvLink: data.cvLink,
+          jobId: data.jobId,
+          message: data.message ?? '',
+        },
+      })
+    } catch (err) {
+      console.error('[job-application] gagal mencatat ke spreadsheet:', err)
+    }
     // Isi pesan sama untuk WhatsApp maupun email — hanya wadahnya beda.
     const lines = [
       `Halo, saya ${data.name} ingin melamar posisi ${jobTitle}${company ? ` di ${company}` : ''}.`,

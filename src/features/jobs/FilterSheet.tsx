@@ -227,7 +227,13 @@ function SheetPanel({
           </button>
           <button
             type="button"
-            onClick={() => { setDraft({}); setExpanded(null) }}
+            // Clear to an explicit '' per group rather than {}. updateParams
+            // spreads the draft over the current filter, so an empty object
+            // overrides nothing and Reset silently did nothing at all.
+            onClick={() => {
+              setDraft(Object.fromEntries(groups.map((g) => [g.key, ''])))
+              setExpanded(null)
+            }}
             className="w-full rounded-full border border-cta py-3 text-sm font-semibold text-cta transition-colors hover:bg-cta/5"
           >
             Reset

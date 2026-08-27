@@ -5,7 +5,7 @@ import { JsonLd } from '@/components/shared/JsonLd'
 import { JobListingClient } from '@/features/jobs/JobListingClient'
 import { breadcrumbSchema, itemListSchema, faqPageSchema } from '@/lib/schema'
 import { generateListingMetadata } from '@/lib/seo'
-import { buildJobsUrl, parseJobsSegments, deslugify } from '@/lib/seo-urls'
+import { buildJobsUrl, parseJobsSegments, deslugify, parsePage } from '@/lib/seo-urls'
 import { SITE_URL, PER_PAGE } from '@/config/api'
 import {
   fetchJobs,
@@ -91,10 +91,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const label = buildLabel(r)
   const path = buildJobsUrl({ keyword: r.keyword, category: r.category, location: r.location, tipe: r.tipe })
+
+  // Unknown slugs are deliberately NOT 404'd — resolve() turns them into keywords
+  // so the tiered search still surfaces something useful. The cost is that any
+  // string at all ("/jdhajhdqeu98213iu1-jobs") answers 200, which would let Google
+  // index an unbounded space of empty pages. Ask for the count here and noindex
+  // the ones that found nothing: users still get the page, crawlers don't index
+  // it. fetchJobs is request-memoised, so this costs no extra upstream call.
+  const { total } = await fetchJobs({
+    perPage: 1,
+    keyword: r.keyword,
+    category: r.category,
+    location: r.location,
+    employmentType: r.tipe,
+  })
+
   return generateListingMetadata({
     title: `Lowongan ${label} Terbaru 2026 | CDC Universitas Stekom`,
     description: `Temukan lowongan ${label} dari perusahaan terverifikasi di CDC Universitas Stekom. Lamar langsung, gratis, tanpa perantara.`,
     path,
+    noIndex: total === 0,
   })
 }
 
@@ -144,7 +160,9 @@ export default async function TaxonomyPage({ params, searchParams }: PageProps) 
 
       {/* searchParams access is isolated here so the outer shell can prerender;
           without this <Suspense> boundary Next.js throws DYNAMIC_SERVER_USAGE. */}
-      <Suspense fallback={<div className="flex items-center justify-center h-64 text-brand-muted text-sm">Memuat lowongan...</div>}>
+      {/* min-h-screen — see /loker: a short fallback collapses the page and leaves
+          the restored scroll offset mid-listing. */}
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-brand-muted text-sm">Memuat lowongan...</div>}>
         <ListingContent
           searchParams={searchParams}
           r={r}
@@ -176,7 +194,7 @@ async function ListingContent({
 }: ListingContentProps) {
   const sp = await searchParams
 
-  const page       = Number(sp.page ?? 1)
+  const page       = parsePage(sp.page)
   const salary     = sp.salary ?? ''
   const experience = sp.experience ?? ''
   const jobId      = sp.jobId ?? ''
@@ -196,7 +214,9 @@ async function ListingContent({
   return (
     <>
       {jobs.length > 0 && <JsonLd schema={itemListSchema(jobs, pageUrl)} />}
-      <JsonLd schema={faqPageSchema(faqs)} />
+      {/* Guarded like ItemList above: an empty result would otherwise publish an
+          FAQ answering "Saat ini terdapat 0 lowongan aktif...". */}
+      {total > 0 && <JsonLd schema={faqPageSchema(faqs)} />}
 
       <JobListingClient
         jobs={jobs}

@@ -21,6 +21,8 @@ export function jobPostingSchema(job: Job): object {
         applicantLocationRequirements: { '@type': 'Country', name: 'Indonesia' },
       }
 
+  const validThrough = job.expiresAt ?? defaultValidThrough(job.postedAt)
+
   return {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
@@ -38,9 +40,11 @@ export function jobPostingSchema(job: Job): object {
     },
     ...locationField,
     employmentType: mapEmploymentType(job.employmentTypeSlug),
-    datePosted: job.postedAt,
+    // datePosted is required by Google, but emitting an invalid value is worse
+    // than omitting it — a zero-dated row simply carries no posting date.
+    ...(job.postedAt ? { datePosted: job.postedAt } : {}),
     // Google requires validThrough; default to 30 days after posting when absent.
-    validThrough: job.expiresAt ?? defaultValidThrough(job.postedAt),
+    ...(validThrough ? { validThrough } : {}),
     ...(job.salary ? { baseSalary: parseSalary(job.salary) } : {}),
     directApply: true,
     url: `${SITE_URL}/job/${job.slug}`,
@@ -50,8 +54,12 @@ export function jobPostingSchema(job: Job): object {
 
 // JobPosting without validThrough triggers a Google warning; jobs from the CDC
 // API have no expiry, so assume a 30-day window from the posting date.
-function defaultValidThrough(postedAt: string): string {
+function defaultValidThrough(postedAt?: string): string | undefined {
+  if (!postedAt) return undefined
   const d = new Date(postedAt)
+  // Guard the epoch too: toISOString() throws RangeError on an Invalid Date,
+  // which would take down the whole page render rather than just the schema.
+  if (Number.isNaN(d.getTime())) return undefined
   d.setDate(d.getDate() + 30)
   return d.toISOString().slice(0, 10)
 }

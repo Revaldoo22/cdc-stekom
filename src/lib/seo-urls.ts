@@ -23,6 +23,24 @@ export interface JobsFilter {
   experience?: string
   keyword?: string
   page?: number
+  /**
+   * Currently open listing in the split-pane view. Carried through so changing a
+   * filter or page keeps the detail panel on screen; without it every filter
+   * click blanked the panel and broke shared ?jobId= links.
+   */
+  jobId?: string
+}
+
+/**
+ * A page number that is always a positive integer.
+ *
+ * `Number(params.page ?? 1)` alone lets "?page=abc" through as NaN, and NaN
+ * survives `Math.max(1, NaN)` — it reached the API as `page=NaN` and left the
+ * pagination with nothing highlighted and its prev button wrongly enabled.
+ */
+export function parsePage(raw?: string): number {
+  const n = Number(raw ?? 1)
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1
 }
 
 // "Data Analyst" → "data-analyst"
@@ -47,6 +65,7 @@ export function buildJobsUrl(f: JobsFilter): string {
   if (f.salary)             q.set('salary', f.salary)
   if (f.experience)         q.set('experience', f.experience)
   if (f.page && f.page > 1) q.set('page', String(f.page))
+  if (f.jobId)              q.set('jobId', f.jobId)
   const qs = q.toString() ? `?${q.toString()}` : ''
 
   const kw  = f.keyword ? slugifyKeyword(f.keyword) : ''

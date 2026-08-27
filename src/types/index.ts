@@ -18,7 +18,8 @@ export interface Job {
   requirements: string[]
   skills: string[]
   applyUrl?: string
-  postedAt: string
+  /** Absent when the backend row carries MySQL's zero-date ("0000-00-00"). */
+  postedAt?: string
   expiresAt?: string
 }
 

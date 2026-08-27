@@ -165,10 +165,14 @@ export default async function JobDetailPage({ params }: PageProps) {
                       {job.education}
                     </span>
                   )}
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                    Diposting {new Date(job.postedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </span>
+                  {/* Hidden entirely for zero-dated rows, matching how the other
+                      optional meta items behave — better than "Invalid Date". */}
+                  {job.postedAt && (
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      Diposting {new Date(job.postedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                  )}
                 </div>
 
                 {/* Badges */}

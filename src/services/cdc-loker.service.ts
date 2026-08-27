@@ -205,6 +205,19 @@ function clean(v?: string | null): string {
   return s
 }
 
+/**
+ * Date fields carry MySQL's zero-date ("0000-00-00") on rows the old CI3 backend
+ * never filled in — 39 of the 54 rows on the last page of the corpus, measured.
+ * `new Date()` turns those into Invalid Date, which surfaced to users as
+ * "NaN tahun yang lalu" and "Diposting Invalid Date". Anything unparseable
+ * becomes undefined so callers can fall back explicitly.
+ */
+function cleanDate(v?: string | null): string | undefined {
+  const s = clean(v)
+  if (!s || s.startsWith('0000')) return undefined
+  return Number.isNaN(new Date(s).getTime()) ? undefined : s
+}
+
 // Region names arrive ALL CAPS ("KAB. ACEH SELATAN"). Expand the abbreviation and
 // title-case for display; slugs are derived from the same normalised string so
 // they stay stable regardless of how the backend cases its data.
@@ -393,8 +406,8 @@ function mapLoker(raw: RawLoker): Job {
     requirements: splitList(raw.persyaratan),
     skills: toSkills(raw.softskill, raw.hardskill),
     applyUrl: applyUrlFrom(raw),
-    postedAt: raw.tanggal,
-    expiresAt: clean(raw.tanggal_kadaluarsa) || undefined,
+    postedAt: cleanDate(raw.tanggal),
+    expiresAt: cleanDate(raw.tanggal_kadaluarsa),
   }
 }
 

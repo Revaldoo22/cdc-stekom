@@ -25,7 +25,10 @@ const TIPE_COLOR: Record<string, string> = {
 }
 
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr?: string): string {
+  // Rows with a zero-date reach here as undefined; without this guard the
+  // arithmetic below yields NaN and renders "NaN tahun yang lalu".
+  if (!dateStr) return 'Tanggal tidak tertera'
   // Compare calendar days (date-only), not raw ms, so "YYYY-MM-DD" parsed as UTC
   // midnight doesn't shift "today" to "yesterday" in WIB.
   const d = new Date(dateStr)
@@ -33,14 +36,15 @@ function relativeTime(dateStr: string): string {
   const now = new Date()
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
   const days = Math.floor((today - posted) / 86_400_000)
-  if (days <= 0) return 'Hari ini'
-  if (days === 1) return 'Kemarin'
-  if (days < 7) return `${days} hari lalu`
-  if (days < 30) return `${Math.floor(days / 7)} minggu lalu`
-  return `${Math.floor(days / 30)} bulan lalu`
+  if (days <= 0) return 'Baru'
+  if (days < 7) return `${days} hari yang lalu`
+  if (days < 30) return `${Math.floor(days / 7)} minggu yang lalu`
+  if (days < 365) return `${Math.floor(days / 30)} bulan yang lalu`
+  return `${Math.floor(days / 365)} tahun yang lalu`
 }
 
-function isNew(dateStr: string): boolean {
+function isNew(dateStr?: string): boolean {
+  if (!dateStr) return false
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000) <= 3
 }
 

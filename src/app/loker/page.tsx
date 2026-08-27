@@ -11,6 +11,7 @@ import {
   fetchLocations,
   fetchTipeKerja,
 } from '@/services/jobs.service'
+import { parsePage } from '@/lib/seo-urls'
 import { PER_PAGE, SITE_URL } from '@/config/api'
 
 export const revalidate = 3600
@@ -36,7 +37,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function LokerPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const page = Number(params.page ?? 1)
+  const page = parsePage(params.page)
   const keyword = params.keyword ?? ''
   const category = params.category ?? ''
   const location = params.location ?? ''
@@ -77,7 +78,10 @@ export default async function LokerPage({ searchParams }: PageProps) {
 
       <JsonLd schema={breadcrumbSchema([{ label: 'Beranda', href: '/' }, { label: 'Lowongan Kerja', href: '/loker' }])} />
 
-      <Suspense fallback={<div className="flex items-center justify-center h-64 text-brand-muted text-sm">Memuat lowongan...</div>}>
+      {/* min-h-screen: a short fallback lets the page collapse mid-navigation, so
+          the browser keeps a scroll offset that lands mid-listing once the real
+          content expands it. */}
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-brand-muted text-sm">Memuat lowongan...</div>}>
         <JobListingClient
           jobs={jobs}
           total={total}
