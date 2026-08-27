@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { JobApplicationSchema, type JobApplicationData } from '@/lib/validators'
 import { submitForm } from '@/services/forms.service'
+import { useApplicantProfile } from '@/hooks/useApplicantProfile'
 
 interface JobApplicationFormProps {
   jobId: string
@@ -75,11 +76,13 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
   const [success, setSuccess] = useState(false)
   // Tautan lanjutan setelah form terkirim: WhatsApp, email, atau situs perusahaan.
   const [handoff, setHandoff] = useState<{ kind: 'wa' | 'email' | 'web'; url: string } | null>(null)
+  const { profile, loaded: profileLoaded, saveProfile } = useApplicantProfile()
   const {
     register,
     control,
     watch,
     setValue,
+    reset,
     handleSubmit,
     trigger,
     formState: { errors, isSubmitting },
@@ -88,6 +91,22 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
     defaultValues: { jobId: jobLink(jobId) },
     mode: 'onTouched',
   })
+
+  // Profil tersimpan baru terbaca setelah mount (localStorage tak ada di server),
+  // jadi defaultValues di atas tidak bisa memuatnya tanpa memicu hydration
+  // mismatch. reset() mengisinya begitu tersedia; keepDefaultValues menjaga
+  // jobId milik loker yang sedang dibuka agar tidak ikut tertimpa.
+  const prefilled = useRef(false)
+  const [isPrefilled, setIsPrefilled] = useState(false)
+  useEffect(() => {
+    if (!profileLoaded || prefilled.current) return
+    prefilled.current = true
+    if (Object.keys(profile).length === 0) return
+    reset({ ...profile, jobId: jobLink(jobId) } as Partial<JobApplicationData>, {
+      keepDefaultValues: true,
+    })
+    setIsPrefilled(true)
+  }, [profileLoaded, profile, reset, jobId])
 
   // Input manual pendidikan hanya muncul saat opsi "Lainnya" dipilih.
   const isOtherEducation = watch('education') === 'lainnya'
@@ -125,6 +144,22 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
       if (!isLastStep) void next()
       return
     }
+
+    // Simpan identitas pelamar di perangkatnya lebih dulu, sebelum pengiriman ke
+    // spreadsheet: kalau webhook gagal, isian form ini tetap terpakai untuk
+    // lamaran berikutnya. Pesan tidak ikut disimpan (spesifik per lowongan).
+    saveProfile({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      education: data.education,
+      educationOther: data.educationOther,
+      graduationYear: data.graduationYear,
+      interestedKuliahKerja: data.interestedKuliahKerja,
+      cvLink: data.cvLink,
+    })
+
     // Perekaman ke spreadsheet TIDAK boleh memblokir lamaran. Kalau webhook
     // Apps Script sedang down, sebelumnya submitForm melempar dan menghentikan
     // seluruh fungsi: WhatsApp tak pernah terbuka dan user hanya melihat form
@@ -206,13 +241,16 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
           <CheckCircle2 className="h-9 w-9 text-cta" aria-hidden="true" />
         </span>
         <div>
-          <h3 className="text-lg font-bold text-brand-text">Lamaran Terkirim!</h3>
-          {/* WhatsApp/email sudah dibuka otomatis saat submit, jadi teksnya
-              menjelaskan apa yang SUDAH terjadi + sisa 1 aksi (tekan Kirim),
-              bukan menyuruh user memulai langkah yang sudah jalan. */}
+          {/* Judul mengikuti kenyataan tiap jalur: WhatsApp/email sudah membawa
+              pesan lamaran, sedangkan jalur web baru sampai tahap pengalihan. */}
+          <h3 className="text-lg font-bold text-brand-text">
+            {handoff?.kind === 'web' ? 'Satu Langkah Lagi' : 'Lamaran Terkirim!'}
+          </h3>
+          {/* Tujuan sudah dibuka otomatis saat submit, jadi teksnya menjelaskan
+              apa yang SUDAH terjadi + sisa aksinya, bukan menyuruh user memulai
+              langkah yang sudah jalan. */}
           {handoff?.kind === 'wa' ? (
             <p className="mt-1 text-sm text-brand-muted">
-              Data Anda tersimpan dan{' '}
               <strong className="text-brand-text">WhatsApp sudah dibuka</strong> dengan
               pesan lamaran <strong className="text-brand-text">{jobTitle}</strong> yang
               siap dikirim. Tinggal tekan <strong className="text-brand-text">Kirim</strong>{' '}
@@ -220,8 +258,7 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
             </p>
           ) : handoff?.kind === 'email' ? (
             <p className="mt-1 text-sm text-brand-muted">
-              Data Anda tersimpan dan{' '}
-              <strong className="text-brand-text">aplikasi email sudah dibuka</strong> dengan
+              <strong className="text-brand-text">Aplikasi email sudah dibuka</strong> dengan
               draf lamaran <strong className="text-brand-text">{jobTitle}</strong> yang
               siap dikirim. Tinggal tekan{' '}
               <strong className="text-brand-text">Kirim</strong> di aplikasi email.
@@ -230,11 +267,9 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
             // Jangan bilang "lamaran terkirim" di jalur ini: perusahaan belum
             // menerima apa pun sampai pelamar menyelesaikan form di situs mereka.
             <p className="mt-1 text-sm text-brand-muted">
-              Data Anda tersimpan dan{' '}
-              <strong className="text-brand-text">situs lamaran perusahaan sudah dibuka</strong>{' '}
-              di tab baru. Lanjutkan pendaftaran{' '}
-              <strong className="text-brand-text">{jobTitle}</strong> di situs tersebut untuk
-              menyelesaikan lamaran Anda.
+              <strong className="text-brand-text">Situs lamaran perusahaan sudah dibuka</strong>{' '}
+              di tab baru. Silakan lengkapi data Anda di sana untuk menyelesaikan
+              lamaran <strong className="text-brand-text">{jobTitle}</strong>.
             </p>
           ) : (
             <p className="mt-1 text-sm text-brand-muted">
@@ -310,6 +345,15 @@ export function JobApplicationForm({ jobId, jobTitle, company, whatsappUrl, emai
           ))}
         </div>
       </div>
+
+      {/* Beri tahu asal isian yang sudah terisi, supaya pelamar tidak mengira
+          datanya milik orang lain dan tahu bahwa semuanya masih bisa diubah. */}
+      {isPrefilled && step === 0 && (
+        <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs leading-relaxed text-brand-muted">
+          Sebagian data terisi otomatis dari lamaran Anda sebelumnya di perangkat
+          ini. Silakan periksa dan ubah bila ada yang berubah.
+        </p>
+      )}
 
       {/* Step 1: Data diri */}
       {step === 0 && (
