@@ -29,7 +29,8 @@ function relativeTime(dateStr?: string): string {
   const now = new Date()
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
   const days = Math.floor((today - posted) / 86_400_000)
-  if (days <= 0) return 'Baru'
+  // Samakan dengan JobCard: loker hari ini menampilkan tanggalnya, bukan "Baru".
+  if (days <= 0) return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   if (days < 7) return `${days} hari yang lalu`
   if (days < 30) return `${Math.floor(days / 7)} minggu yang lalu`
   if (days < 365) return `${Math.floor(days / 30)} bulan yang lalu`
