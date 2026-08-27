@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from '@/config/api'
+import { SITEMAP_IDS } from './sitemap'
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -22,8 +23,9 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     // generateSitemaps() produces segmented sitemaps at /sitemap/[id].xml — there
-    // is no /sitemap.xml index route, so list each segment explicitly.
-    // 0=static, 1=jobs, 2=taxonomy, 3=events
-    sitemap: [0, 1, 2, 3].map((id) => `${SITE_URL}/sitemap/${id}.xml`),
+    // is no /sitemap.xml index route, so list each segment explicitly. The ids
+    // come from the sitemap route itself; a hardcoded list here silently went
+    // stale when the job corpus was sharded across 20 segments.
+    sitemap: SITEMAP_IDS.map((id) => `${SITE_URL}/sitemap/${id}.xml`),
   }
 }

@@ -15,11 +15,21 @@ const JOB_SHARDS = 20
 const TAXONOMY_ID = JOB_SHARDS + 1
 const EVENTS_ID = JOB_SHARDS + 2
 
+/**
+ * Every sitemap id this route emits, in order. robots.txt imports this instead
+ * of hardcoding a list — the two drifted before (robots advertised ids 0-3 while
+ * the taxonomy and event shards actually sit at 21 and 22), which left ~555k
+ * listings and every facet page unannounced to search engines.
+ */
+export const SITEMAP_IDS: number[] = [
+  0,
+  ...Array.from({ length: JOB_SHARDS }, (_, i) => i + 1),
+  TAXONOMY_ID,
+  EVENTS_ID,
+]
+
 export async function generateSitemaps() {
-  const ids = [{ id: 0 }]
-  for (let i = 1; i <= JOB_SHARDS; i++) ids.push({ id: i })
-  ids.push({ id: TAXONOMY_ID }, { id: EVENTS_ID })
-  return ids
+  return SITEMAP_IDS.map((id) => ({ id }))
 }
 
 // Next 16 passes `id` as a promise resolving to a string (it was a plain number

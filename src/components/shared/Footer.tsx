@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Briefcase } from 'lucide-react'
+import { seoUrl } from '@/lib/seo-urls'
 
 export function Footer() {
   const year = new Date().getFullYear()
@@ -22,10 +23,13 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-white">Pencari Kerja</h3>
             <ul className="mt-3 space-y-2 text-sm text-[#CBD5E1]">
               <li><Link href="/loker" className="hover:text-white transition-colors duration-200 cursor-pointer">Semua Lowongan</Link></li>
-              <li><Link href="/tipe-pekerjaan/full-time" className="hover:text-white transition-colors duration-200 cursor-pointer">Full Time</Link></li>
-              <li><Link href="/tipe-pekerjaan/part-time" className="hover:text-white transition-colors duration-200 cursor-pointer">Part Time</Link></li>
-              <li><Link href="/tipe-pekerjaan/magang" className="hover:text-white transition-colors duration-200 cursor-pointer">Magang</Link></li>
-              <li><Link href="/tipe-pekerjaan/freelance" className="hover:text-white transition-colors duration-200 cursor-pointer">Freelance</Link></li>
+              {/* Link to the canonical facet URLs directly — /tipe-pekerjaan/* is
+                  only a legacy redirect, and pointing sitewide links at it wasted
+                  a hop on every crawl. */}
+              <li><Link href={seoUrl.employmentType('full-time')} className="hover:text-white transition-colors duration-200 cursor-pointer">Full Time</Link></li>
+              <li><Link href={seoUrl.employmentType('part-time')} className="hover:text-white transition-colors duration-200 cursor-pointer">Part Time</Link></li>
+              <li><Link href={seoUrl.employmentType('magang')} className="hover:text-white transition-colors duration-200 cursor-pointer">Magang</Link></li>
+              <li><Link href={seoUrl.employmentType('freelance')} className="hover:text-white transition-colors duration-200 cursor-pointer">Freelance</Link></li>
             </ul>
           </div>
 
