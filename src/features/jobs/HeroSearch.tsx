@@ -58,13 +58,16 @@ interface DropdownSelectProps {
   options: DropdownOption[]
   value: string
   onChange: (value: string) => void
+  /** Teks di tombol saat belum ada pilihan — dijaga pendek agar tidak terpotong. */
   placeholder: string
+  /** Label opsi "semua" di dalam panel; boleh lebih panjang dari placeholder. */
+  allLabel?: string
   icon: React.ReactNode
   /** Label input pencarian, mis. "Cari kota". */
   searchLabel: string
 }
 
-function DropdownSelect({ options, value, onChange, placeholder, icon, searchLabel }: DropdownSelectProps) {
+function DropdownSelect({ options, value, onChange, placeholder, allLabel, icon, searchLabel }: DropdownSelectProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
@@ -146,7 +149,7 @@ function DropdownSelect({ options, value, onChange, placeholder, icon, searchLab
                     value === '' ? 'bg-primary/8 text-primary font-semibold' : 'text-brand-muted hover:bg-muted hover:text-brand-text'
                   }`}
                 >
-                  <span>{placeholder}</span>
+                  <span>{allLabel ?? placeholder}</span>
                   {value === '' && <Check className="h-3.5 w-3.5 shrink-0" />}
                 </button>
                 <div className="my-1 border-t border-border" />
@@ -220,8 +223,10 @@ export function HeroSearch({ locations, categories }: Props) {
       onSubmit={handleSearch}
       className="flex flex-col sm:flex-row bg-white rounded-2xl shadow-lg border border-white/20"
     >
-      {/* Keyword */}
-      <label className="relative flex flex-1 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
+      {/* Keyword dapat porsi tiga kali dropdown: isinya nama posisi panjang
+          ("Business Development") yang tampil utuh, sementara dropdown hanya
+          memuat label pendek satu kata. */}
+      <label className="relative flex flex-3 items-center gap-2.5 px-4 min-w-0 cursor-text border-b sm:border-b-0 sm:border-r border-border">
         <Search className="h-4.5 w-4.5 text-primary shrink-0" aria-hidden="true" />
         <div className="relative flex-1 min-w-0">
           <input
@@ -237,7 +242,10 @@ export function HeroSearch({ locations, categories }: Props) {
           {!keyword && !inputFocused && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 flex items-center text-sm font-medium text-brand-muted select-none"
+              // whitespace-nowrap: tanpa ini kata kunci dua suku kata seperti
+              // "Frontend Developer" pecah jadi dua baris dan menaikkan tinggi
+              // form. Kelebihannya dipotong, bukan dibungkus.
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center whitespace-nowrap overflow-hidden text-sm font-medium text-brand-muted select-none"
             >
               {typingText}
               <span className="ml-0.5 inline-block w-px h-4 bg-brand-muted animate-[blink_1s_step-end_infinite]" />
@@ -248,11 +256,15 @@ export function HeroSearch({ locations, categories }: Props) {
 
       {/* Location */}
       <div className="flex-1 min-w-0 px-4 border-b sm:border-b-0 sm:border-r border-border">
+        {/* Placeholder sependek mungkin: kolomnya sempit, dan "Semua Kota"
+            terpotong jadi "Semua …" — justru membuang kata yang informatif.
+            Opsi "semua" di dalam panel tetap memakai label lengkap. */}
         <DropdownSelect
           options={locationOptions}
           value={location}
           onChange={setLocation}
-          placeholder="Semua Kota"
+          placeholder="Kota"
+          allLabel="Semua Kota"
           searchLabel="Cari kota atau provinsi"
           icon={<MapPin className="h-4 w-4" />}
         />
@@ -264,7 +276,8 @@ export function HeroSearch({ locations, categories }: Props) {
           options={categoryOptions}
           value={category}
           onChange={setCategory}
-          placeholder="Semua Bidang"
+          placeholder="Bidang"
+          allLabel="Semua Bidang"
           searchLabel="Cari bidang pekerjaan"
           icon={<Layers className="h-4 w-4" />}
         />
