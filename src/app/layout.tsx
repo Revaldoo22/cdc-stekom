@@ -36,6 +36,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image' },
   formatDetection: { telephone: false, date: false, email: false, address: false },
+  // Google Search Console ownership check. Read from the environment so the
+  // token is not committed, and omitted entirely when unset — an empty
+  // <meta google-site-verification> would fail verification rather than skip it.
+  ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION } }
+    : {}),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
