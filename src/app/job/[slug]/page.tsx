@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import {
   MapPin, Briefcase, Clock, BadgeDollarSign,
   ExternalLink, CheckCircle2, Wrench, Calendar,
-  Building2, CalendarClock, GraduationCap, Accessibility,
+  Building2, CalendarClock, GraduationCap, Accessibility, ShieldAlert,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -268,6 +268,22 @@ export default async function JobDetailPage({ params }: PageProps) {
                 </div>
               </section>
             )}
+
+            {/* Peringatan keamanan — pengunjung dari mesin pencari mendarat di
+                halaman ini, bukan di /loker, jadi peringatannya harus ada di
+                kedua tempat. */}
+            <section className="rounded-xl border border-orange-200 bg-orange-50/60 p-6">
+              <h2 className="text-base font-bold text-brand-text mb-2 flex items-center gap-2">
+                <ShieldAlert className="h-4.5 w-4.5 text-orange-500" aria-hidden="true" />
+                Waspada Penipuan
+              </h2>
+              <p className="text-sm leading-relaxed text-brand-muted">
+                Rekrutmen resmi tidak pernah memungut biaya apa pun. Tolak permintaan
+                uang untuk administrasi, seragam, atau pelatihan, dan jangan membagikan
+                data rekening maupun kode OTP kepada perekrut. Bila menemukan lowongan
+                yang mencurigakan, laporkan kepada kami.
+              </p>
+            </section>
           </article>
 
           {/* Sidebar */}

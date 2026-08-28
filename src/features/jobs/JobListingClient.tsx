@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
   Search, MapPin, X, ChevronDown, Building2, BadgeDollarSign,
   Briefcase, Clock, CheckCircle2, Wrench, ArrowUpRight,
-  Bookmark, BookmarkCheck, SlidersHorizontal, Calendar,
+  Bookmark, BookmarkCheck, SlidersHorizontal, Calendar, ShieldAlert,
 } from 'lucide-react'
 import type { Job, Category, Location, TipeKerja } from '@/types'
 import { SALARY_RANGES } from '@/config/filters'
@@ -264,10 +264,13 @@ function CompactJobCard({ job, isSelected, onSelect }: CompactJobCardProps) {
       onClick={handleClick}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       aria-pressed={isSelected}
-      className={`group relative flex gap-3.5 px-5 py-4 border-b border-border/70 transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary border-l-[3px] ${
+      // Kartu mandiri dengan border penuh, bukan baris yang dipisah garis:
+      // batas tiap lowongan jadi jelas dan mudah dipindai. Yang terpilih
+      // ditandai border primer + ring tipis, menggantikan garis kiri tebal.
+      className={`group relative flex gap-3.5 rounded-xl border p-4 transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         isSelected
-          ? 'bg-sky-50/70 border-l-primary'
-          : 'bg-white border-l-transparent hover:bg-slate-50/80'
+          ? 'border-primary bg-sky-50/60 ring-1 ring-primary/30'
+          : 'border-border/70 bg-white hover:border-primary/40 hover:shadow-sm'
       }`}
     >
       {/* Company icon */}
@@ -523,6 +526,21 @@ function JobDetailPanel({ job }: { job: Job }) {
               </section>
             )}
 
+            {/* Peringatan keamanan — modus penipuan lowongan di Indonesia paling
+                sering berupa permintaan biaya di muka, bukan sekadar pencurian
+                data, jadi itu yang disebut lebih dulu. */}
+            <section className="border-t border-border/60 pt-6">
+              <h3 className="text-[13px] font-bold text-brand-text mb-1.5 flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-orange-500" aria-hidden />
+                Waspada Penipuan
+              </h3>
+              <p className="text-[13px] leading-relaxed text-brand-muted">
+                Rekrutmen resmi tidak pernah memungut biaya apa pun. Tolak permintaan
+                uang untuk administrasi, seragam, atau pelatihan, dan jangan
+                membagikan data rekening maupun kode OTP kepada perekrut.
+              </p>
+            </section>
+
             {/* Report section */}
             <section className="border-t border-border/60 pt-6">
               <button
@@ -560,7 +578,7 @@ function JobDetailPanel({ job }: { job: Job }) {
 
 function CardSkeleton() {
   return (
-    <div className="flex gap-3.5 px-5 py-4 border-b border-border/70 animate-pulse">
+    <div className="flex gap-3.5 rounded-xl border border-border/70 bg-white p-4 animate-pulse">
       <div className="h-11 w-11 shrink-0 rounded-xl bg-slate-100" />
       <div className="flex-1 space-y-2 pt-0.5">
         <div className="h-3.5 w-3/4 rounded-full bg-slate-100" />
@@ -835,15 +853,21 @@ export function JobListingClient({
           sejajar dengan kotak pencarian alih-alih menempel ke tepi layar. */}
       <div className="flex pl-4 sm:pl-6 lg:pl-8">
 
-        {/* Left: job list — own scroll column (independent from the detail panel) */}
+        {/* Left: job list — ikut scroll halaman, memakai scrollbar browser di
+            tepi kanan layar. Sebelumnya kolom ini sticky dengan overflow-y-auto
+            sendiri, sehingga ada dua scrollbar berdampingan dan pengguna harus
+            menebak mana yang menggerakkan daftar. Hanya panel detail yang tetap
+            punya scroll sendiri. */}
         {/* Melebar bertahap: pada layar sangat lebar, kolom 440px membuat panel
             detail di sebelahnya terasa terlalu lapang dibanding daftarnya. */}
-        <div className="w-full lg:w-100 xl:w-110 2xl:w-lg shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
+        {/* Tanpa border-r: pemisah antar kolom tidak diperlukan lagi setelah
+            tiap lowongan punya border kartunya sendiri. */}
+        <div className="w-full lg:w-100 xl:w-110 2xl:w-lg shrink-0 pr-4 sm:pr-5 space-y-3">
 
           {/* Jumlah hasil — dipindah ke sini dari bar filter biru: tempatnya di
               atas daftar yang dihitungnya, dan sekaligus memberi jarak antara
               bar filter dan kartu pertama. */}
-          <div className="px-5 py-4">
+          <div className="pt-4 pb-1">
             <p className="text-[13px] text-brand-muted">
               <span className="font-bold text-brand-text">{total.toLocaleString('id-ID')}</span>{' '}
               lowongan
@@ -865,7 +889,9 @@ export function JobListingClient({
                   onSelect={selectJob}
                 />
               ))}
-              <div className="px-5 py-5 border-t border-border/60">
+              {/* Tanpa border-t: kartu sudah berdiri sendiri, garis pemisah di
+                  sini justru menyambungkannya kembali secara visual. */}
+              <div className="py-5">
                 <Pagination
                   page={initialPage}
                   total={total}
