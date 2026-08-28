@@ -821,9 +821,6 @@ export function JobListingClient({
                 </button>
               )}
             </div>
-            <p className="ml-auto shrink-0 text-[12.5px] font-medium text-white/55 lg:ml-2">
-              <span className="font-bold text-white">{total.toLocaleString('id-ID')}</span> lowongan
-            </p>
           </div>
         </div>
       </div>
@@ -842,6 +839,18 @@ export function JobListingClient({
         {/* Melebar bertahap: pada layar sangat lebar, kolom 440px membuat panel
             detail di sebelahnya terasa terlalu lapang dibanding daftarnya. */}
         <div className="w-full lg:w-100 xl:w-110 2xl:w-lg shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
+
+          {/* Jumlah hasil — dipindah ke sini dari bar filter biru: tempatnya di
+              atas daftar yang dihitungnya, dan sekaligus memberi jarak antara
+              bar filter dan kartu pertama. */}
+          <div className="px-5 py-4">
+            <p className="text-[13px] text-brand-muted">
+              <span className="font-bold text-brand-text">{total.toLocaleString('id-ID')}</span>{' '}
+              lowongan
+              {initialKeyword && <> untuk &ldquo;<span className="font-semibold text-brand-text">{initialKeyword}</span>&rdquo;</>}
+            </p>
+          </div>
+
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
           ) : jobs.length === 0 ? (
