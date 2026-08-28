@@ -834,7 +834,9 @@ export function JobListingClient({
           pada layar sangat lebar (atau tampilan yang di-zoom out) dan
           menyisakan pita putih di kiri-kanan. Keterbacaan tetap dijaga oleh
           max-w-4xl pada isi panel detail. */}
-      <div className="flex">
+      {/* Padding kiri menyamai bar filter di atasnya, supaya kartu pertama
+          sejajar dengan kotak pencarian alih-alih menempel ke tepi layar. */}
+      <div className="flex pl-4 sm:pl-6 lg:pl-8">
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
         {/* Melebar bertahap: pada layar sangat lebar, kolom 440px membuat panel
