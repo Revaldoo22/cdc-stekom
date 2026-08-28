@@ -740,7 +740,9 @@ export function JobListingClient({
 
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-16 z-20 bg-primary shadow-md">
-        <div className="site-container">
+        {/* Padding saja, tanpa max-width: harus sejajar dengan kolom konten di
+            bawahnya yang juga mengisi penuh lebar layar. */}
+        <div className="px-4 sm:px-6 lg:px-8">
 
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2.5 pt-6 pb-4">
@@ -824,13 +826,16 @@ export function JobListingClient({
       </div>
 
       {/* ── Content ── */}
-      {/* Tanpa padding-inline site-container: kartu daftar sengaja menempel ke
-          tepi kolomnya, hanya batas lebarnya yang disamakan. */}
-      <div className="mx-auto flex max-w-[1600px]">
+      {/* Tanpa batas lebar: ini layout dua kolom ala aplikasi, bukan halaman
+          bacaan. Membatasinya di 1600px membuat kontainer berhenti di tengah
+          pada layar sangat lebar (atau tampilan yang di-zoom out) dan
+          menyisakan pita putih di kiri-kanan. Keterbacaan tetap dijaga oleh
+          max-w-4xl pada isi panel detail. */}
+      <div className="flex">
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
-        {/* 2xl:w-128 — pada kontainer 1600px, kolom 440px membuat panel detail
-            di sebelahnya jadi terlalu lapang dibanding daftarnya. */}
+        {/* Melebar bertahap: pada layar sangat lebar, kolom 440px membuat panel
+            detail di sebelahnya terasa terlalu lapang dibanding daftarnya. */}
         <div className="w-full lg:w-100 xl:w-110 2xl:w-lg shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
