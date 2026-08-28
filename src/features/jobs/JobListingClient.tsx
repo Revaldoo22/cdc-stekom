@@ -737,10 +737,7 @@ export function JobListingClient({
 
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-16 z-20 bg-primary shadow-md">
-        {/* max-w-7xl menyamai Navbar dan daftar loker di bawah; max-w-screen-2xl
-            membuat kotak pencarian dan pill filter menjorok 256px melewati
-            tepi konten lain. */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="site-container">
 
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2.5 pt-6 pb-4">
@@ -824,7 +821,9 @@ export function JobListingClient({
       </div>
 
       {/* ── Content ── */}
-      <div className="mx-auto flex max-w-7xl">
+      {/* Tanpa padding-inline site-container: kartu daftar sengaja menempel ke
+          tepi kolomnya, hanya batas lebarnya yang disamakan. */}
+      <div className="mx-auto flex max-w-[1600px]">
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
         <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">

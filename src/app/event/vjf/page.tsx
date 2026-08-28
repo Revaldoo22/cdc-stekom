@@ -57,7 +57,7 @@ export default async function VJFPage() {
 
       {/* Hero */}
       <section className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="site-container py-10">
           <Breadcrumbs crumbs={crumbs} currentLabel="Virtual Job Fair" />
           <Badge className="mt-4 bg-primary/10 text-primary hover:bg-primary/10 border-0">
             Virtual Job Fair
@@ -82,7 +82,7 @@ export default async function VJFPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-10">
+      <div className="site-container py-10 space-y-10">
 
         {/* Upcoming batches */}
         {upcoming.length > 0 && (

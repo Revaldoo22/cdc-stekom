@@ -4,6 +4,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Lebar konten situs — satu sumber kebenaran.
+ *
+ * Sebelumnya tiap section menulis `mx-auto max-w-7xl px-4 sm:px-6 lg:px-8`
+ * sendiri di 23 tempat, sehingga mudah melenceng: bar filter /loker sempat
+ * memakai max-w-screen-2xl dan menjorok 256px melewati Navbar.
+ *
+ * 1600px dipilih supaya layar lebar (atau tampilan yang di-zoom out) ikut
+ * terisi alih-alih menyisakan pita putih lebar di kanan-kiri, tapi baris teks
+ * tetap tidak terlalu panjang untuk dibaca.
+ */
+@utility site-container {
+  margin-inline: auto;
+  max-width: 1600px;
+  padding-inline: 1rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
 @theme {
   /* Brand tokens */
   --color-cta: #16a34a;

@@ -44,7 +44,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-border">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="site-container flex h-16 items-center justify-between">
 
         {/* Logo */}
         <Link
@@ -115,7 +115,7 @@ export function Navbar() {
       {/* Mobile dropdown */}
       {open && (
         <div className="lg:hidden border-t border-border bg-white">
-          <nav className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-0.5" aria-label="Navigasi mobile">
+          <nav className="site-container py-3 flex flex-col gap-0.5" aria-label="Navigasi mobile">
             {NAV_LINKS.map(({ label, href }) => {
               const active = isActive(pathname, href)
               return (

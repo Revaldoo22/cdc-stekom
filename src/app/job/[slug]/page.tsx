@@ -89,14 +89,14 @@ export default async function JobDetailPage({ params }: PageProps) {
 
       {/* ── Breadcrumb bar ── */}
       <div className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div className="site-container py-3">
           <Breadcrumbs crumbs={crumbs} currentLabel={job.title} />
         </div>
       </div>
 
       {/* ── Job header ── */}
       <div className="border-b border-border bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="site-container py-8">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
 
             {/* Left: logo + info */}
@@ -208,7 +208,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       </div>
 
       {/* ── Body ── */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="site-container py-8">
         <div className="flex flex-col gap-6 lg:flex-row">
 
           {/* Main content */}

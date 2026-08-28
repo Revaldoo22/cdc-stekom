@@ -67,7 +67,7 @@ export default async function EventDetailPage({ params }: PageProps) {
 
       {/* Header */}
       <section className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="site-container py-8">
           <Breadcrumbs crumbs={crumbs} currentLabel={event.title} />
           <Badge
             className={`mt-4 ${event.type === 'vjf' ? 'bg-primary/10 text-primary hover:bg-primary/10' : 'bg-cta/10 text-cta hover:bg-cta/10'}`}
@@ -112,7 +112,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="site-container py-10">
         <div className="flex flex-col gap-10 lg:flex-row">
           {/* Jobs */}
           <div className="flex-1 min-w-0">

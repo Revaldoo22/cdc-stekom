@@ -77,8 +77,8 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Left: text + search — constrained to max-w-7xl */}
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Left: text + search */}
+        <div className="relative z-10 site-container">
           <div className="py-12 lg:py-14 lg:max-w-[58%]">
             <Badge className="mb-4 bg-white/20 text-white hover:bg-white/20 border-0">
               Portal Karir Resmi Universitas STEKOM
@@ -111,7 +111,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Lowongan Terbaru ── */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="site-container py-12">
         {/* Header */}
         <div className="flex items-end justify-between">
           <div>
@@ -170,7 +170,7 @@ export default async function HomePage() {
 
       {/* ── Kategori Pekerjaan ── */}
       <section className="bg-brand-bg border-y border-border">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="site-container py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-brand-text">Kategori Pekerjaan</h2>
             <Button variant="ghost" render={<Link href="/kategori" />} className="cursor-pointer text-primary gap-1">
@@ -193,7 +193,7 @@ export default async function HomePage() {
 
       {/* ── Lokasi Populer ── */}
       <section className="bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="site-container py-12">
           <div className="mb-7 flex items-end justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Berdasarkan Kota</p>
@@ -232,7 +232,7 @@ export default async function HomePage() {
 
       {/* ── Event Rekrutmen — promo banners ── */}
       {(offlineEvents.length > 0 || vjfEvents.length > 0) && (
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="site-container py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-brand-text">Event Rekrutmen</h2>
             <Button variant="ghost" render={<Link href="/event" />} className="cursor-pointer text-primary gap-1">
@@ -325,7 +325,7 @@ export default async function HomePage() {
           <div className="absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="relative site-container py-12">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               Eksklusif Penunjang <span className="text-orange-300">Karir dan Usaha</span>

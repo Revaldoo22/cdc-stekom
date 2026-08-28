@@ -51,7 +51,7 @@ export default async function OfflineRecruitmentPage() {
 
       {/* Hero */}
       <section className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="site-container py-10">
           <Breadcrumbs crumbs={crumbs} currentLabel="Rekrutmen Offline" />
           <Badge className="mt-4 bg-cta/10 text-cta hover:bg-cta/10 border-0">
             Rekrutmen Offline
@@ -76,7 +76,7 @@ export default async function OfflineRecruitmentPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-10">
+      <div className="site-container py-10 space-y-10">
 
         {/* Upcoming batches */}
         {upcoming.length > 0 && (

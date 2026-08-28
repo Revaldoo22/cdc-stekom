@@ -27,7 +27,7 @@ export default async function EventPage() {
       <JsonLd schema={breadcrumbSchema([...crumbs, { label: 'Event', href: '/event' }])} />
 
       <div className="border-b border-border bg-brand-bg">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="site-container py-6">
           <Breadcrumbs crumbs={crumbs} currentLabel="Event Rekrutmen" />
           <h1 className="mt-2 text-2xl font-bold text-brand-text sm:text-3xl">
             Event Rekrutmen
@@ -38,7 +38,7 @@ export default async function EventPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="site-container py-8">
         {/* Quick links */}
         <div className="grid grid-cols-1 gap-4 mb-10 sm:grid-cols-2">
           <Link

@@ -22,7 +22,7 @@ export default async function DaerahPage() {
     <>
       <JsonLd schema={breadcrumbSchema([{ label: 'Beranda', href: '/' }, { label: 'Lokasi', href: '/daerah' }])} />
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="site-container py-8">
         <Breadcrumbs crumbs={[{ label: 'Beranda', href: '/' }]} currentLabel="Lokasi" />
 
         <header className="mt-5 mb-5">
