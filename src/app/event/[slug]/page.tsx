@@ -131,7 +131,8 @@ export default async function EventDetailPage({ params }: PageProps) {
             {event.description && (
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-brand-text mb-3">Tentang Event</h2>
-                <p className="whitespace-pre-line text-sm leading-relaxed text-brand-muted">
+                {/* Batas keterbacaan: kontainer halaman mengisi layar penuh. */}
+                <p className="max-w-4xl whitespace-pre-line text-sm leading-relaxed text-brand-muted">
                   {event.description}
                 </p>
               </div>

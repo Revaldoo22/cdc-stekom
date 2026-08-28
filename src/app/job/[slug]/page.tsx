@@ -220,8 +220,11 @@ export default async function JobDetailPage({ params }: PageProps) {
                 <span className="h-1 w-4 rounded-full bg-primary inline-block" />
                 Deskripsi Pekerjaan
               </h2>
+              {/* max-w-4xl, bukan max-w-none: kontainer halaman kini mengisi
+                  layar penuh, dan tanpa batas ini baris deskripsi jadi terlalu
+                  panjang untuk dibaca nyaman di monitor lebar. */}
               <div
-                className="prose prose-sm max-w-none text-brand-muted leading-relaxed [&_h3]:text-brand-text [&_h3]:font-semibold [&_h3]:text-sm [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1.5 [&_p]:mb-3"
+                className="prose prose-sm max-w-4xl text-brand-muted leading-relaxed [&_h3]:text-brand-text [&_h3]:font-semibold [&_h3]:text-sm [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1.5 [&_p]:mb-3"
                 dangerouslySetInnerHTML={{ __html: job.description }}
               />
             </section>
