@@ -363,7 +363,9 @@ function JobDetailPanel({ job }: { job: Job }) {
             : '-translate-y-full opacity-0 pointer-events-none'
         }`}
       >
-        <div className="px-5 py-3 flex items-center gap-3">
+        {/* Batas & pemusatan yang sama dengan isi panel, supaya judul dan tombol
+            di bar ini sejajar dengan konten di bawahnya, bukan membentang penuh. */}
+        <div className="mx-auto max-w-4xl px-7 py-3 flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="font-bold text-[13px] text-brand-text truncate leading-tight">{job.title}</p>
             <p className="text-[11.5px] text-brand-muted truncate mt-0.5">{job.company}</p>
@@ -389,10 +391,11 @@ function JobDetailPanel({ job }: { job: Job }) {
 
       {/* ── Scrollable content ── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        {/* max-w-4xl menjaga baris deskripsi tetap enak dibaca, tapi cukup lebar
-            untuk mengisi panel di layar besar — max-w-2xl menyisakan pita putih
-            lebar di kanan. */}
-        <div className="px-7 pt-7 pb-10 max-w-4xl">
+        {/* mx-auto penting: panel bisa jauh lebih lebar dari max-w-4xl di layar
+            besar, dan tanpa ini isinya menempel ke kiri sambil meninggalkan
+            ratusan piksel kosong di kanan — terbaca seperti bug, bukan pilihan
+            desain. Dipusatkan, ruang sisanya terbagi rata. */}
+        <div className="mx-auto px-7 pt-7 pb-10 max-w-4xl">
 
           {/* Job header — observed by IntersectionObserver */}
           <div ref={headerRef} className="flex items-start gap-4 mb-5">
