@@ -389,7 +389,10 @@ function JobDetailPanel({ job }: { job: Job }) {
 
       {/* ── Scrollable content ── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="px-7 pt-7 pb-10 max-w-2xl">
+        {/* max-w-4xl menjaga baris deskripsi tetap enak dibaca, tapi cukup lebar
+            untuk mengisi panel di layar besar — max-w-2xl menyisakan pita putih
+            lebar di kanan. */}
+        <div className="px-7 pt-7 pb-10 max-w-4xl">
 
           {/* Job header — observed by IntersectionObserver */}
           <div ref={headerRef} className="flex items-start gap-4 mb-5">
@@ -826,7 +829,9 @@ export function JobListingClient({
       <div className="mx-auto flex max-w-[1600px]">
 
         {/* Left: job list — own scroll column (independent from the detail panel) */}
-        <div className="w-full lg:w-100 xl:w-110 shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
+        {/* 2xl:w-128 — pada kontainer 1600px, kolom 440px membuat panel detail
+            di sebelahnya jadi terlalu lapang dibanding daftarnya. */}
+        <div className="w-full lg:w-100 xl:w-110 2xl:w-lg shrink-0 border-r border-border/70 min-h-screen lg:min-h-0 lg:sticky lg:top-[204px] lg:h-[calc(100vh-204px)] lg:overflow-y-auto">
           {isPending ? (
             Array.from({ length: 10 }).map((_, i) => <CardSkeleton key={i} />)
           ) : jobs.length === 0 ? (
