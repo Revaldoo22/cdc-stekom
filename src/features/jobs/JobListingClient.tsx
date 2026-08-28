@@ -737,7 +737,10 @@ export function JobListingClient({
 
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-16 z-20 bg-primary shadow-md">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+        {/* max-w-7xl menyamai Navbar dan daftar loker di bawah; max-w-screen-2xl
+            membuat kotak pencarian dan pill filter menjorok 256px melewati
+            tepi konten lain. */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
           {/* Search row */}
           <form onSubmit={handleSearch} className="flex gap-2.5 pt-6 pb-4">
