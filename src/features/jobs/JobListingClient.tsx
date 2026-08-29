@@ -29,8 +29,12 @@ function relativeTime(dateStr?: string): string {
   const now = new Date()
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
   const days = Math.floor((today - posted) / 86_400_000)
-  // Samakan dengan JobCard: loker hari ini menampilkan tanggalnya, bukan "Baru".
-  if (days <= 0) return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  // "Hari ini", bukan tanggalnya. Berbeda dengan JobCard di beranda yang punya
+  // badge BARU di samping judul, kartu di daftar ini tidak punya penanda lain —
+  // jadi menampilkan "29 Agu 2026" di sebelah "1 hari yang lalu" pada kartu
+  // berikutnya justru memaksa pembaca menghitung sendiri.
+  if (days <= 0) return 'Hari ini'
+  if (days === 1) return 'Kemarin'
   if (days < 7) return `${days} hari yang lalu`
   if (days < 30) return `${Math.floor(days / 7)} minggu yang lalu`
   if (days < 365) return `${Math.floor(days / 30)} bulan yang lalu`
