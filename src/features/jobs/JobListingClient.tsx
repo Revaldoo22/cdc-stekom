@@ -867,11 +867,10 @@ export function JobListingClient({
           {/* Jumlah hasil — dipindah ke sini dari bar filter biru: tempatnya di
               atas daftar yang dihitungnya, dan sekaligus memberi jarak antara
               bar filter dan kartu pertama. */}
-          <div className="pt-4 pb-1">
-            <p className="text-[13px] text-brand-muted">
+          <div className="pt-7 pb-3">
+            <p className="text-sm text-brand-muted">
               <span className="font-bold text-brand-text">{total.toLocaleString('id-ID')}</span>{' '}
               lowongan
-              {initialKeyword && <> untuk &ldquo;<span className="font-semibold text-brand-text">{initialKeyword}</span>&rdquo;</>}
             </p>
           </div>
 
