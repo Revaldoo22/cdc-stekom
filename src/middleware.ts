@@ -14,8 +14,12 @@ import { NextResponse, type NextRequest } from 'next/server'
  * dicocokkan dengan regex biasa.
  */
 
-/** `/loker-{daerah}/daftar/{id}` → halaman loker daerah tersebut. */
-const LOKER_DAERAH = /^\/loker-([a-z0-9-]+)\/daftar\/\d+\/?$/i
+/**
+ * `/loker-{daerah}/daftar` dan `/loker-{daerah}/daftar/{id}` → halaman loker
+ * daerah tersebut. Id-nya opsional: CI memakai kedua bentuk, dan varian tanpa
+ * angka justru yang muncul di hasil pencarian Google ("cdc.stekom.ac.id › daftar").
+ */
+const LOKER_DAERAH = /^\/loker-([a-z0-9-]+)\/daftar(?:\/\d+)?\/?$/i
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -38,11 +42,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
+  // `/daftar` polos — indeks daftar CI, tanpa petunjuk daerah sama sekali.
+  // Halaman semua loker adalah padanan terdekatnya.
+  if (/^\/daftar\/?$/i.test(pathname)) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/loker'
+    url.search = ''
+    return NextResponse.redirect(url, 308)
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
   // Hanya jalan pada pola yang benar-benar ditangani, supaya tiap request lain
-  // tidak perlu melewati middleware sama sekali.
-  matcher: ['/loker-:daerah/daftar/:id*'],
+  // tidak perlu melewati middleware sama sekali. Dua entri karena `:id*`
+  // ternyata tidak mencakup bentuk tanpa segmen id sama sekali.
+  matcher: ['/daftar', '/loker-:daerah/daftar', '/loker-:daerah/daftar/:id*'],
 }
