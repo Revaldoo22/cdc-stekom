@@ -73,6 +73,42 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // ─── URL warisan frontend CodeIgniter ─────────────────────────────────────
+  // Situs ini dulu dilayani CI dengan pola URL berbeda. URL lama itu masih
+  // terindeks Google, dan sejak pindah ke Next.js pengunjung yang mengkliknya
+  // mendarat di 404 — otoritas SEO-nya hangus.
+  //
+  // Ditangani di sini, bukan lewat proxy/middleware: redirects() diperiksa
+  // sebelum filesystem, tidak butuh runtime terpisah, dan dokumentasi Next 16
+  // sendiri menyarankan menghindari Proxy bila ada opsi lain.
+  //
+  // permanent: true → 308, status yang membuat mesin pencari mengalihkan
+  // peringkat URL lama ke URL baru (bukan sekadar memindahkan pengunjung).
+  async redirects() {
+    return [
+      {
+        // Angka di ujung URL lama adalah id halaman daftar CI, bukan id
+        // lowongan, jadi tidak ada lowongan spesifik yang bisa dituju —
+        // halaman loker daerah itu tujuan terdekat yang masih bermakna.
+        source: "/loker-:daerah/daftar/:id(\\d+)",
+        destination: "/jobs/in-:daerah",
+        permanent: true,
+      },
+      {
+        // Varian tanpa id — justru bentuk inilah yang muncul di hasil pencarian
+        // Google ("cdc.stekom.ac.id › daftar").
+        source: "/loker-:daerah/daftar",
+        destination: "/jobs/in-:daerah",
+        permanent: true,
+      },
+      {
+        // Indeks daftar CI tanpa petunjuk daerah sama sekali.
+        source: "/daftar",
+        destination: "/loker",
+        permanent: true,
+      },
+    ];
+  },
   // Standalone output for Docker/VPS deployment (Dokploy).
   output: "standalone",
 };
