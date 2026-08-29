@@ -37,9 +37,7 @@ const PERKS = [
 
 export default async function HomePage() {
   const [{ jobs: latestJobs }, categories, locations, events] = await Promise.all([
-    // 8, bukan 6: grid melebar sampai 4 kolom di layar besar, dan 6 kartu
-    // menyisakan baris kedua yang bolong. 8 mengisi penuh di 4, 2, dan 1 kolom.
-    fetchJobs({ perPage: 8 }),
+    fetchJobs({ perPage: 6 }),
     fetchCategories(),
     fetchLocations(),
     fetchEvents(),
@@ -152,9 +150,10 @@ export default async function HomePage() {
         </div>
 
         {/* Grid */}
-        {/* 2xl:grid-cols-4 — tanpa batas lebar kontainer, tiga kolom membuat
-            kartu meregang terlalu lebar di monitor besar. */}
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        {/* Maksimal 3 kolom: dengan 6 kartu, grid 4 kolom menyisakan baris kedua
+            yang cuma terisi dua. Tiga kolom selalu terisi penuh (3+3), begitu
+            pula dua kolom (2+2+2) dan satu kolom. */}
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {latestJobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
